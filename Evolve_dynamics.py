@@ -42,7 +42,7 @@ def Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list
     return sol
 
 
-def Compute_sensitivity():
+def Plot_Trajectory():
     D = 32924
 
     # This term tune the chaos
