@@ -33,6 +33,8 @@ def anharmonic_oscillator(y,t,frequency,V_phi,D,Tuple_list):
 
     return dydt
 
+
+
 def Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list):
     '''
     :return: sol: [len(t), len(y0)], [:,0]: action 0. [:,1] : action1.  [:,6] : angle 0. ...
@@ -46,7 +48,8 @@ def Plot_Trajectory():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 251.2
+    # V_phi = 251.2
+    V_phi = 0
 
     dof = 6
 
