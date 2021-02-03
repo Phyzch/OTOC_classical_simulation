@@ -1,31 +1,33 @@
 import numpy as np
-from scipy.integrate import odeint
-from Potential import compute_angle_velocity, compute_action_velocity
-from Potential import prepare_Tuple_list
 import matplotlib.pyplot as plt
-from Evolve_dynamics import Evolve_dynamics
 import matplotlib
+from Evolve_dynamics import Evolve_dynamics_SCCL2
+from SCCL2_potential import Generate_n_quanta_list_for_SCCL2
 
 cf = 2 * np.pi * 0.0299792458  # conversion from cm^{-1} to ps^{-1}
 
-def Analyze_Sensitivity_number_operator():
+def SCCL2_Analyze_Sensitivity_number_operator():
     '''
     compute |\n_{i}(t) / \phi_{j}|^{2} matrix at early time
     :return:
     '''
     matplotlib.rcParams.update({'font.size': 20})
-    D = 32924
+
 
     # This term tune the chaos
-    V_phi = 251.2
+    V0 = 300
+
+    scaling_parameter = 0.2
+
+    frequency = [1149, 508, 291, 474, 843, 333]
 
     dof = 6
 
-    Tuple_list = prepare_Tuple_list(dof)
+    f0 = 500
 
-    frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
+    nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.01
+    final_time = 0.015
 
     Time_step = np.linspace(0, final_time, 500)
 
@@ -37,7 +39,7 @@ def Analyze_Sensitivity_number_operator():
 
     Initial_position = Initial_action + Initial_angle1
 
-    sol = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+    sol = Evolve_dynamics_SCCL2(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
 
     Period = 0.03
 
@@ -53,7 +55,7 @@ def Analyze_Sensitivity_number_operator():
 
         Initial_position = Initial_action + Initial_angle2
 
-        sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+        sol1 = Evolve_dynamics_SCCL2(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
 
         Sol_diff = np.array(sol1) - np.array(sol)
 
@@ -103,128 +105,42 @@ def Analyze_Sensitivity_number_operator():
 
     plt.show()
 
-def Analyze_Stability_Matrix_change_action():
-    matplotlib.rcParams.update({'font.size': 20})
-    D = 32924
 
-    # This term tune the chaos
-    V_phi = 251.2
-
-    dof = 6
-
-    Tuple_list = prepare_Tuple_list(dof)
-
-    frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
-
-    final_time = 0.01
-
-    Time_step = np.linspace(0, final_time, 500)
-
-    Initial_action = [2, 2, 3, 3, 3, 2]
-    Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
-
-    print('initial angle:')
-    print(Initial_angle1)
-
-    Initial_position = Initial_action + Initial_angle1
-
-    sol = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
-
-    Period = 0.03
-
-    Sol_diff_list = []
-    action_jitter = 0.001
-
-    for i in range(dof):
-        action_change = np.zeros(dof)
-        action_change[i] = action_jitter
-
-        Initial_action1 = np.array(Initial_action) + np.array(action_change)
-        Initial_action1 = Initial_action1.tolist()
-
-        Initial_position = Initial_action1 + Initial_angle1
-
-        sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
-
-        Sol_diff = np.array(sol1) - np.array(sol)
-
-        Sol_diff_list.append(Sol_diff)
-
-    # form matrix for \partial n_{i} , \partial phi_{j}
-    Time_step_len = len(Time_step)
-
-    Stability_Matrix_list = []
-
-    for t in range(Time_step_len):
-        Stability_Matrix = []
-        for i in range(dof):
-            Stability_Matrix.append([])
-
-        for i in range(dof):
-            for j in range(dof):
-                Stability_Matrix[i].append(Sol_diff_list[j][t][i] / action_jitter)
-
-        Stability_Matrix_list.append(Stability_Matrix)
-
-    # compute singular value of matrix at each time step
-
-    Singular_value_list = []
-    for t in range(Time_step_len):
-        u, s, vh = np.linalg.svd(Stability_Matrix_list[t])
-        s = -np.sort(-s)
-        Singular_value_list.append(s)
-
-    Singular_value_list = np.transpose(Singular_value_list)
-
-    fig, ax = plt.subplots(nrows=1,ncols=1)
-    for i in range(dof):
-        ax.plot(np.array(Time_step) / Period ,Singular_value_list[i], label='singular value '+str(i))
-
-    ax.legend(loc= 'best')
-    ax.set_xlabel('t/T')
-
-    # ax.set_xscale('log')
-    ax.set_yscale('log')
-
-    plt.show()
-
-
-
-
-def Analyze_Stability_Matrix_for_xp():
+def SCCL2_Analyze_Stability_Matrix_for_xp():
     matplotlib.rcParams.update({'font.size': 14})
-    D = 32924
 
     # This term tune the chaos
-    V_phi = 251.5
-    # V_phi = 7
+    V0 = 300
+
+    scaling_parameter = 0.2
+
+    frequency = [1149, 508, 291, 474, 843, 333]
 
     dof = 6
 
-    Tuple_list = prepare_Tuple_list(dof)
+    f0 = 500
 
-    frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
+    nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.007
+    final_time = 0.03
 
-    Time_step = np.linspace(0, final_time, 500)
+    Time_step = np.linspace(0, final_time, 100)
 
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 1
+    Iterate_number = 10
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
     Period = 0.03
-    Initial_action = [2, 2, 3, 3, 3, 2]
+    Initial_action = [2, 2, 3, 2, 2, 2]
 
     Eigenvalue_List_in_all_simulation = []
     Singularvalue_List_in_all_simulation = []
 
     for _ in range(Iterate_number):
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-        # Initial_angle = [5.482704485103094, 0.11406030522578368, 3.7368792709211793, 5.7732171653849225, 6.198046444388037, 2.9107388232894045]
 
         # print('initial action')
         # print(Initial_action)
@@ -233,8 +149,7 @@ def Analyze_Stability_Matrix_for_xp():
 
         Initial_position = Initial_action + Initial_angle
 
-        sol = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
-
+        sol = Evolve_dynamics_SCCL2(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
@@ -248,7 +163,7 @@ def Analyze_Stability_Matrix_for_xp():
 
             Initial_position = Initial_action1 + Initial_angle
 
-            sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+            sol1 = Evolve_dynamics_SCCL2(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
 
             Sol_change_list.append(sol1)
 
@@ -262,7 +177,7 @@ def Analyze_Stability_Matrix_for_xp():
 
             Initial_position = Initial_action + Initial_angle1
 
-            sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+            sol1 = Evolve_dynamics_SCCL2(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
 
             Sol_change_list.append(sol1)
 
