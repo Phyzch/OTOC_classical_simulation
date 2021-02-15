@@ -334,10 +334,10 @@ def Plot_Trajectory_SCCL2():
     # This parameter tune the chaos
     V0 = 300
 
-    scaling_parameter = 0.3
+    scaling_parameter = 0.2
 
     frequency = [1149, 508, 291, 474, 843, 333]
-    frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])
+    # frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])
 
     dof = 6
 
@@ -380,8 +380,8 @@ def Plot_Trajectory_SCCL2():
     fig2, ax2 = plt.subplots(nrows=2, ncols=1)
 
     for i in range(dof):
-        ax2[0].plot(Time_step / Period, sol[:, i], label=' $\Delta$ J' + str(i) + ' (t)')
-        ax2[1].plot(Time_step / Period, sol[:, i + dof], label='$\Delta \phi$ ' + str(i) + " (t)")
+        ax2[0].plot(Time_step / Period, sol[:, i] , label=' $\Delta$ J' + str(i + 1) + ' (t)')
+        ax2[1].plot(Time_step / Period, np.cos(sol[:, i + dof]) , label='$cos \phi$ ' + str(i + 1) + " (t)")
 
     ax2[0].legend(loc='best')
     ax2[1].legend(loc='best')
@@ -389,6 +389,6 @@ def Plot_Trajectory_SCCL2():
     ax2[1].set_xlabel('t/T')
 
     ax2[0].set_yscale('log')
-    ax2[1].set_yscale('log')
+    # ax2[1].set_yscale('log')
 
     plt.show()

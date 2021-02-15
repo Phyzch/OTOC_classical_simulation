@@ -92,7 +92,7 @@ def Plot_Trajectory():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.03
+    final_time = 0.05
 
     Time_step = np.linspace(0,final_time,500)
 
@@ -128,7 +128,7 @@ def Plot_Trajectory():
 
     Initial_position = Initial_action + Initial_angle2
 
-    sol1 = Evolve_dynamics(Initial_position,Time_step,frequency,V_phi,D,Tuple_list)
+    # sol1 = Evolve_dynamics(Initial_position,Time_step,frequency,V_phi,D,Tuple_list)
 
     # fig1, ax1 = plt.subplots(nrows=2,ncols=1)
     #
@@ -141,13 +141,13 @@ def Plot_Trajectory():
     # ax1[1].set_xlabel('t/T')
 
     # difference between trajectory
-    Sol_diff = np.array(sol1) - np.array(sol)
+    # Sol_diff = np.array(sol1) - np.array(sol)
 
     fig2, ax2 = plt.subplots(nrows=2,ncols=1)
 
     for i in range(dof):
         ax2[0].plot(Time_step/Period , sol[:,i] , label = ' $\Delta$ J' + str(i) + ' (t)' )
-        ax2[1].plot(Time_step / Period, sol[:, i + dof], label='$\Delta \phi$ ' + str(i) + " (t)")
+        ax2[1].plot(Time_step / Period, np.sin(sol[:, i + dof]), label='$sin \phi$ ' + str(i) + " (t)")
 
     ax2[0].legend(loc='best')
     ax2[1].legend(loc='best')
@@ -155,7 +155,7 @@ def Plot_Trajectory():
     ax2[1].set_xlabel('t/T')
 
     ax2[0].set_yscale('log')
-    ax2[1].set_yscale('log')
+    # ax2[1].set_yscale('log')
 
     # ax2[0].set_xscale('log')
     # ax2[1].set_xscale('log')

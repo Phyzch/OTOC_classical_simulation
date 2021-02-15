@@ -24,12 +24,6 @@ def Generate_n_quanta_list(Delta_n , dof):
                 n_quanta[j] = 0
             n_quanta1 = np.copy(n_quanta)
 
-            # we only add 1,1,1 quanta in Hamiltoniam
-            # bool1 = True
-            # for j in range(dof):
-            #     if(n_quanta1[j] > 1):
-            #         bool1 = False
-            # if bool1 == True:
             n_quanta_list.append(n_quanta1)
 
         else:
@@ -47,12 +41,7 @@ def Generate_n_quanta( mode_index, Delta_n, dof, n_quanta, n_quanta_list ):
                 for j in range(mode_index + 1, dof):
                     n_quanta[j] = 0
                 n_quanta1 = np.copy(n_quanta)
-                # we only add 111000 like coupling
-                # bool1 = True
-                # for j in range(dof):
-                #     if (n_quanta1[j] > 1):
-                #         bool1 = False
-                # if bool1 == True:
+
                 n_quanta_list.append(n_quanta1)
 
 
@@ -63,12 +52,6 @@ def Generate_n_quanta( mode_index, Delta_n, dof, n_quanta, n_quanta_list ):
         n_quanta[mode_index] = Delta_n
         n_quanta1 = np.copy(n_quanta)
 
-        # we only add 111000 like coupling
-        # bool1 = True
-        # for j in range(dof):
-        #     if (n_quanta1[j] > 1):
-        #         bool1 = False
-        # if bool1 == True:
         n_quanta_list.append(n_quanta1)
 
 
@@ -97,79 +80,79 @@ def SCCL2_Offdiagonal_coupling(action, angle, V0,  scaling_parameter, frequency,
 
     return V
 
+
+
 def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list):
     dof = len(action)
-    angle_velocity = np.zeros([dof])
+
+    # add anharmonicity
+    Omega_list = []
+    D = 10000
+    for i in range(dof):
+        Omega = frequency[i] - pow(frequency[i],2) / (2*D)  * action[i]
+        Omega_list.append(Omega)
+
+
+    partial_V_partial_J_list = []
 
     for i in range(dof):
-        angle_velocity[i] = frequency[i]
+        partial_V_partial_J = 0
+        if(action[i] == 0):
+            partial_V_partial_J_list.append(0)
+            continue
 
         for nquanta in nquanta_list:
             coupling = V0
-
-            if nquanta[i] == 0:
+            if(nquanta[i] == 0):
                 continue
+            for j in range(dof):
+                if(nquanta[j] == 0):
+                    continue
+                nj = nquanta[j]
 
-            for j in range(len(nquanta)):
-                if (j == i):
-                    ni = nquanta[i]
-                    if(action[i] < 0.001):
-                        coupling = 0
-                    else:
-                        coupling =  coupling *  pow( pow(frequency[i]/f0,1/2) * scaling_parameter, ni ) \
-                    * pow(2 * np.cos(angle[i]) , ni ) * ni/2 * pow(action[i] , ni/2 -1 )
+                coupling = coupling * pow(-1,nj) * np.power(scaling_parameter * pow(frequency[j] / f0 , 0.5) , nj ) *\
+                np.power(2 * pow(action[j] , 0.5) * np.cos(angle[j]) , nj )
 
-                    coupling = pow(-1, ni) * coupling
-                else:
-                    nj = nquanta[j]
-                    if nj!=0:
-                        if(action[j] < 0.001):
-                            coupling = 0
-                        else:
-                            coupling =  coupling *  pow(pow(frequency[j] / f0, 1 / 2) * scaling_parameter, nj) \
-                               * pow(2 * np.power(action[j] , 0.5) * np.cos(angle[j]), nj)
-                        coupling =  pow(-1, nj) * coupling
+            coupling = coupling * (nquanta[i]/2) / action[i]
 
-            angle_velocity[i] = angle_velocity[i] + coupling
+            partial_V_partial_J = partial_V_partial_J + coupling
+
+        partial_V_partial_J_list.append(partial_V_partial_J)
+
+    angle_velocity = np.array(partial_V_partial_J_list) + np.array(Omega_list)
 
     return angle_velocity
 
-def SCCL2_action_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list):
+def  SCCL2_action_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list):
     dof = len(action)
-    action_velocity = np.zeros([dof])
+
+    partial_V_partial_theta_list = []
 
     for i in range(dof):
-        partialJpartialtheta = 0
+        if(action[i] == 0):
+            partial_V_partial_theta_list.append(0)
+            continue
+
+        partial_V_partial_theta = 0
+
         for nquanta in nquanta_list:
             coupling = V0
-
-            if nquanta[i] == 0:
+            if(nquanta[i] == 0):
                 continue
 
-            for j in range(len(nquanta)):
-                if(j==i):
-                    ni = nquanta[i]
-                    if(action[i] < 0.001):
-                        coupling = 0
-                    else:
-                        coupling =  coupling * pow( pow(frequency[i]/f0,1/2) * scaling_parameter, ni ) \
-                    * pow(2 * np.sqrt(action[i]) , ni ) * ni * pow(np.cos(angle[i]), ni - 1) * (-np.sin(angle[i]))
+            for j in range(dof):
+                if(nquanta[j] == 0):
+                    continue
+                nj = nquanta[j]
+                coupling = coupling * pow(-1,nj) * np.power( scaling_parameter * pow(  frequency[j] / f0 ,0.5) , nj ) * \
+                           pow(2 * pow(action[j] ,0.5) * np.cos(angle[j]) , nj)
 
-                    coupling = pow(-1, ni) *  coupling
-                else:
-                    nj = nquanta[j]
-                    if nj!=0 :
-                        if(action[j] < 0.001):
-                            coupling = 0
-                        else:
-                            coupling = coupling *  pow( pow(frequency[j]/f0,1/2) * scaling_parameter, nj ) \
-                    * pow(2 * np.sqrt(action[j]) * np.cos(angle[j]) , nj )
+            coupling = coupling * nquanta[i] * (-np.tan(angle[i]))
 
-                        coupling =  pow(-1, nj) * coupling
+            partial_V_partial_theta = partial_V_partial_theta + coupling
 
-            partialJpartialtheta = partialJpartialtheta +  coupling
+        partial_V_partial_theta_list.append(partial_V_partial_theta)
 
-        action_velocity[i] = -partialJpartialtheta
+    action_velocity = - np.array(partial_V_partial_theta_list)
 
     return action_velocity
-
