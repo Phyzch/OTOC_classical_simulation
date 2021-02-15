@@ -92,7 +92,10 @@ def compute_angle_velocity(frequency,action, angle, D, V_phi , Tuple_list):
 
     Partial_V_partial_J_list = []
     for i in range(dof):
-        term1 = np.cos(angle[i]) * V_phi / pow(action[i],0.5)
+        if(action[i] != 0):
+            term1 = np.cos(angle[i]) * V_phi / pow(action[i],0.5)
+        else:
+            term1 = 0
 
         partial_V_partial_J = 0
 

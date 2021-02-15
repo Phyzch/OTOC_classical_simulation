@@ -1,10 +1,12 @@
 import numpy as np
+import os
 from scipy.integrate import odeint
 from Potential import compute_angle_velocity, compute_action_velocity
 from Potential import prepare_Tuple_list
 import matplotlib.pyplot as plt
 from Evolve_dynamics import Evolve_dynamics
 import matplotlib
+
 
 cf = 2 * np.pi * 0.0299792458  # conversion from cm^{-1} to ps^{-1}
 
@@ -191,40 +193,60 @@ def Analyze_Stability_Matrix_change_action():
 
 
 
-def Analyze_Stability_Matrix_for_xp():
+def Analyze_Stability_Matrix_for_xp(folder_path):
     matplotlib.rcParams.update({'font.size': 14})
     D = 32924
 
     # This term tune the chaos
-    V_phi = 251.5
-    # V_phi = 7
+    # V_phi = 75.7
+    V_phi = 7
 
     dof = 6
 
     Tuple_list = prepare_Tuple_list(dof)
 
-    frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
+    frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])  # in unit of cm^{-1}
 
-    final_time = 0.007
+    final_time = 0.6
 
     Time_step = np.linspace(0, final_time, 500)
 
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 1
+    Iterate_number = 20
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
     Period = 0.03
+
     Initial_action = [2, 2, 3, 3, 3, 2]
+    Initial_energy = np.sum( np.array(frequency) * np.array(Initial_action) )
+
 
     Eigenvalue_List_in_all_simulation = []
     Singularvalue_List_in_all_simulation = []
 
+    Initial_action_list = []
+    Initial_angle_list = []
+    Max_quanta_number = 6
     for _ in range(Iterate_number):
+
+        # random sample Initial action in microcanonical ensemble
+        energy = 0
+
+        Initial_action = []
+        while( any( [(abs(energy - Initial_energy) > Initial_energy / 20) , (Initial_action in Initial_action_list)] )  ):
+            # this is just or
+            Initial_action = np.array([ int( 1 + np.random.random() * (Max_quanta_number-1) ) for i in range(dof) ])
+            energy = np.sum(frequency * Initial_action)
+            Initial_action = Initial_action.tolist()
+
+        Initial_action_list.append(Initial_action)
+
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
         # Initial_angle = [5.482704485103094, 0.11406030522578368, 3.7368792709211793, 5.7732171653849225, 6.198046444388037, 2.9107388232894045]
+        Initial_angle_list.append(Initial_angle)
 
         # print('initial action')
         # print(Initial_action)
@@ -412,4 +434,35 @@ def Analyze_Stability_Matrix_for_xp():
 
     # ax3.legend(loc = 'best')
     ax3.set_yscale('log')
+
+    # save data:
+    file_path = os.path.join(folder_path,"Microcanonical Average Eigenvalue.txt")
+    f = open(file_path,"w")
+    f.write(str(dof) + "\n")
+    Data_len = len(Time_step)
+    for i in range(Data_len):
+        f.write(str(Time_step[i] / Period) + " ")
+    f.write("\n")
+
+    for i in range(dof * 2):
+        for j in range(Data_len):
+            f.write(str(Average_Eigenvalue_list[i][j]) + " ")
+        f.write("\n")
+
+    f.close()
+
+    log_path = os.path.join(folder_path,"Micaocanonical Average action angle.txt")
+    f1 = open(log_path,"w")
+    f1.write(str(Iterate_number) + "\n")
+    for i in range(Iterate_number):
+        for j in range(dof):
+            f1.write(str(Initial_action_list[i][j]) + " ")
+        f1.write("\n")
+        for j in range(dof):
+            f1.write(str(Initial_angle_list[i][j]) + " ")
+        f1.write("\n")
+
+    f1.close()
+
+
     plt.show()

@@ -83,8 +83,8 @@ def Plot_Trajectory():
     D = 32924
 
     # This term tune the chaos
-    # V_phi = 251.2
-    V_phi = 0
+    V_phi = 70
+    # V_phi = 0
 
     dof = 6
 
@@ -92,7 +92,7 @@ def Plot_Trajectory():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.01
+    final_time = 0.03
 
     Time_step = np.linspace(0,final_time,500)
 
@@ -119,10 +119,11 @@ def Plot_Trajectory():
     # ax[1].set_xlabel('t/T')
 
     phase_jitter = 0.001
+    action_jitter = 0.001
 
-    Initial_action = [2,2,3,3,3,2]
+    Initial_action = [2,2,3 + action_jitter,3,3,2]
 
-    Initial_angle2 = np.array(Initial_angle1) + np.array([0,0,phase_jitter,0,0,0])
+    Initial_angle2 = np.array(Initial_angle1)
     Initial_angle2 = Initial_angle2.tolist()
 
     Initial_position = Initial_action + Initial_angle2
@@ -145,8 +146,8 @@ def Plot_Trajectory():
     fig2, ax2 = plt.subplots(nrows=2,ncols=1)
 
     for i in range(dof):
-        ax2[0].plot(Time_step/Period , Sol_diff[:,i] , label = ' $\Delta$ J' + str(i) + ' (t)' )
-        ax2[1].plot(Time_step / Period, Sol_diff[:, i + dof], label='$\Delta \phi$ ' + str(i) + " (t)")
+        ax2[0].plot(Time_step/Period , sol[:,i] , label = ' $\Delta$ J' + str(i) + ' (t)' )
+        ax2[1].plot(Time_step / Period, sol[:, i + dof], label='$\Delta \phi$ ' + str(i) + " (t)")
 
     ax2[0].legend(loc='best')
     ax2[1].legend(loc='best')
@@ -160,3 +161,5 @@ def Plot_Trajectory():
     # ax2[1].set_xscale('log')
 
     plt.show()
+
+

@@ -129,12 +129,12 @@ def SCCL2_Analyze_Stability_Matrix_for_xp():
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 10
+    Iterate_number = 1
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
     Period = 0.03
-    Initial_action = [2, 2, 3, 2, 2, 2]
+    Initial_action = [2, 2, 3, 2 , 2 , 2]
 
     Eigenvalue_List_in_all_simulation = []
     Singularvalue_List_in_all_simulation = []
@@ -152,7 +152,7 @@ def SCCL2_Analyze_Stability_Matrix_for_xp():
         sol = Evolve_dynamics_SCCL2(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
-        action_jitter = 0.001
+        action_jitter = 0.01
 
         for i in range(dof):
             action_change = np.zeros(dof)
@@ -167,7 +167,7 @@ def SCCL2_Analyze_Stability_Matrix_for_xp():
 
             Sol_change_list.append(sol1)
 
-        phase_jitter = 0.001
+        phase_jitter = 0.01
         for i in range(dof):
             phase_change = np.zeros(dof)
             phase_change[i] = phase_jitter
@@ -327,4 +327,68 @@ def SCCL2_Analyze_Stability_Matrix_for_xp():
 
     # ax3.legend(loc = 'best')
     ax3.set_yscale('log')
+    plt.show()
+
+
+def Plot_Trajectory_SCCL2():
+    # This parameter tune the chaos
+    V0 = 300
+
+    scaling_parameter = 0.3
+
+    frequency = [1149, 508, 291, 474, 843, 333]
+    frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])
+
+    dof = 6
+
+    f0 = 500
+
+    nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
+
+    final_time = 0.1
+
+    Time_step = np.linspace(0, final_time, 100)
+
+    # specify initial position and angle
+    Initial_action = [2, 2, 3, 3, 3, 2]
+    Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
+
+    print('initial angle:')
+    print(Initial_angle1)
+
+    Initial_position = Initial_action + Initial_angle1
+
+    # solve dynamics
+    sol = Evolve_dynamics_SCCL2(Initial_position, Time_step, V0, scaling_parameter, frequency, f0, nquanta_list)
+
+    Period = 0.03
+
+    phase_jitter = 0.001
+    action_jitter = 0.001
+
+    Initial_action = [2, 2, 3 + action_jitter, 3, 3, 2]
+
+    Initial_angle2 = np.array(Initial_angle1)
+    Initial_angle2 = Initial_angle2.tolist()
+
+    Initial_position = Initial_action + Initial_angle2
+
+    # sol1 = Evolve_dynamics_SCCL2(Initial_position, Time_step, V0, scaling_parameter, frequency, f0, nquanta_list)
+    #
+    # Sol_diff = np.array(sol1) - np.array(sol)
+
+    fig2, ax2 = plt.subplots(nrows=2, ncols=1)
+
+    for i in range(dof):
+        ax2[0].plot(Time_step / Period, sol[:, i], label=' $\Delta$ J' + str(i) + ' (t)')
+        ax2[1].plot(Time_step / Period, sol[:, i + dof], label='$\Delta \phi$ ' + str(i) + " (t)")
+
+    ax2[0].legend(loc='best')
+    ax2[1].legend(loc='best')
+    ax2[0].set_xlabel('t/T')
+    ax2[1].set_xlabel('t/T')
+
+    ax2[0].set_yscale('log')
+    ax2[1].set_yscale('log')
+
     plt.show()
