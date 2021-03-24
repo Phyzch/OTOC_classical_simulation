@@ -4,6 +4,8 @@ import matplotlib
 from Evolve_dynamics import Evolve_dynamics_SCCL2 , Evolve_dynamics_SCCL2_Realistic_Hamiltonian
 from SCCL2_potential import Generate_n_quanta_list_for_SCCL2, SCCL2_angle_velocity, SCCL2_action_velocity, SCCL2_Realistic_Hamiltonian_action_velocity, SCCL2_Realistic_Hamiltonian_angle_velocity
 from SCCL2_potential import Read_Realistic_SCCL2
+from Evolve_back_in_time import Evolve_dynamics_SCCL2_Realistic_Hamiltonian_back_in_time
+import os
 
 cf = 2 * np.pi * 0.0299792458  # conversion from cm^{-1} to ps^{-1}
 
@@ -331,6 +333,250 @@ def SCCL2_Analyze_Stability_Matrix_for_xp():
     plt.show()
 
 
+def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
+    matplotlib.rcParams.update({'font.size': 14})
+    frequency, Coefficient, nquanta_list = Read_Realistic_SCCL2()
+
+    Coefficient = np.array(Coefficient) * 1
+
+    dof = 6
+    final_time = 0.062
+
+    Period = 0.03
+
+    Time_step = np.linspace(0, final_time, 100)
+
+    Iterate_number = 1
+
+    Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
+
+    Eigenvalue_List_in_all_simulation = []
+    Singularvalue_List_in_all_simulation = []
+    Largest_Lypunov_exponent_in_all_simulation = 0
+
+    Initial_angle = [31.93947782165516, 6.097124720812282, 8.845719425253785, 16.528919283844296, 20.21703311486376,
+                     14.099748439492283]
+
+    Initial_angle_for_largest_eigenvalue = []
+    Largest_Eigenvalue_List= []
+    Largest_Singularvalue_List = []
+
+    for l in range(Iterate_number):
+
+        if(l != 0 ):
+            Initial_angle_new = [ ((np.random.random() -0.5) * 2 * 0.1 + 1) * angle for angle in Initial_angle ]
+            Initial_angle = Initial_angle_new
+
+        Initial_position = Initial_action + Initial_angle
+
+        sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+
+        Sol_change_list = []  # list of trajectory after impose a phase or action jitter
+        action_jitter = 0.001
+
+        for i in range(dof):
+            action_change = np.zeros(dof)
+            action_change[i] = action_jitter
+
+            Initial_action1 = np.array(Initial_action) + np.array(action_change)
+            Initial_action1 = Initial_action1.tolist()
+
+            Initial_position = Initial_action1 + Initial_angle
+
+            sol1 = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+            Sol_change_list.append(sol1)
+
+        phase_jitter = 0.001
+        for i in range(dof):
+            phase_change = np.zeros(dof)
+            phase_change[i] = phase_jitter
+
+            Initial_angle1 = np.array(Initial_angle) + np.array(phase_change)
+            Initial_angle1 = Initial_angle1.tolist()
+
+            Initial_position = Initial_action + Initial_angle1
+
+            sol1 =  Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+
+            Sol_change_list.append(sol1)
+
+        # we first compute \partial Q_{i} / \partial J_{j} or \partial Q_{i} / \partial theta_{j}
+
+        # for original dynamics
+        XP_matrix = []
+        for i in range(2 * dof):
+            XP_matrix.append([])
+
+        Time_step_len = len(Time_step)
+        for t in range(Time_step_len):
+            for i in range(dof):
+                J = sol[t][i]
+                phi = sol[t][i + dof]
+
+                Q = np.sqrt(2 * J) * np.cos(phi)
+                P = np.sqrt(2 * J) * np.sin(phi)
+
+                XP_matrix[i].append(Q)
+                XP_matrix[i + dof].append(P)
+        XP_matrix = np.array(XP_matrix)
+
+        Diff_XP_matrix_list = []  # change of XP matrix after we change action/ angle  :  Delta Q_{i}. or Delta P_{i}
+        for i in range(2 * dof):
+            XP_matrix_new = []
+            for j in range(2 * dof):
+                XP_matrix_new.append([])
+
+            Sol_after_change = Sol_change_list[i]
+
+            for t in range(Time_step_len):
+                for j in range(dof):
+                    J = Sol_after_change[t][j]
+                    phi = Sol_after_change[t][j + dof]
+
+                    Q = np.sqrt(2 * J) * np.cos(phi)
+                    P = np.sqrt(2 * J) * np.sin(phi)
+
+                    XP_matrix_new[j].append(Q)
+                    XP_matrix_new[j + dof].append(P)
+
+            XP_matrix_new = np.array(XP_matrix_new)
+            Diff_XP_matrix = XP_matrix_new - XP_matrix
+
+            Diff_XP_matrix_list.append(Diff_XP_matrix)
+
+        #  Diff_XP_matrix_list: size [2*dof, 2*dof, Time_len]
+
+        Stability_Matrix_list = []  # Stability_Matrix at different time step
+
+        for t in range(Time_step_len):
+            Stability_Matrix = np.zeros([2 * dof, 2 * dof])
+
+            for i in range(2 * dof):
+                for j in range(dof):
+                    # {Q_{i}(t) ,Q_{j}}
+                    Stability_Matrix[i][j] = (
+                                Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(2 * Initial_action[j]) * np.sin(
+                            Initial_angle[j]) +
+                                Diff_XP_matrix_list[j + dof][i][t] / phase_jitter * np.cos(Initial_angle[j]) / np.sqrt(
+                            2 * Initial_action[j]))  # {, Q_{j} }
+                    # {Q_{i}(t) , P_{j}}
+                    Stability_Matrix[i][j + dof] = (
+                                Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(2 * Initial_action[j]) * np.cos(
+                            Initial_angle[j]) -
+                                Diff_XP_matrix_list[j + dof][i][t] / phase_jitter * np.sin(Initial_angle[j]) / np.sqrt(
+                            2 * Initial_action[j]))  # { , P_{j}}
+
+            Stability_Matrix_list.append(Stability_Matrix)
+
+        Singular_value_list = []
+        Eigen_value_list = []
+        for t in range(Time_step_len):
+            u, s, vh = np.linalg.svd(Stability_Matrix_list[t])
+            s = -np.sort(-s)
+            Singular_value_list.append(s)
+            eigenvalue = np.power(s, 2)
+            Eigen_value_list.append(eigenvalue)
+
+        # Now we have Singular value at different time
+        Singular_value_list = np.transpose(Singular_value_list)
+        Eigen_value_list = np.transpose(Eigen_value_list)
+
+        Eigenvalue_List_in_all_simulation.append(Eigen_value_list)
+        Singularvalue_List_in_all_simulation.append(Singular_value_list)
+
+        Largest_Lyapunov_exponent = np.log(Eigen_value_list[0][-1]) / (2*Time_step[-1])
+
+        if(Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
+            Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
+            Initial_angle_for_largest_eigenvalue = Initial_angle
+            Largest_Eigenvalue_List = Eigen_value_list
+            Largest_Singularvalue_List = Singular_value_list
+
+    Singular_value_list = Largest_Singularvalue_List
+    Eigen_value_list = Largest_Eigenvalue_List
+
+    print('initial action')
+    print(Initial_action)
+    Initial_angle = Initial_angle_for_largest_eigenvalue
+    print('initial angle:')
+    print(Initial_angle)
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    for i in range(2 * dof):
+        ax.plot(np.array(Time_step) / Period, Eigen_value_list[i],
+                label='Eigenvalue ' + str(i + 1) + " for $M^{2}$ ")
+
+    ax.legend(loc='best')
+    ax.set_xlabel('t/T')
+
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+    for i in range(2 * dof):
+        ax1.plot(np.array(Time_step) / Period, Singular_value_list[i],
+                 label='Singular value ' + str(i + 1) + ' for M')
+    ax1.legend(loc='best')
+    ax1.set_xlabel('t/T')
+
+    # ax1.set_xscale('log')
+    ax1.set_yscale('log')
+
+    # plot average result over angle in torus
+    fig3, ax3 = plt.subplots(nrows=1,ncols=1)
+
+    Average_Eigenvalue_list = np.mean(Eigenvalue_List_in_all_simulation,0)
+    Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation,0)
+
+    for i in range( 2*dof):
+        ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+
+    ax3.set_xlabel('t/T')
+    ax3.set_ylabel('Average Eigenvalue')
+
+    ax3.set_title('Average Eigenvalue')
+
+    # ax3.legend(loc = 'best')
+    ax3.set_yscale('log')
+    plt.show()
+
+
+
+    # save the result
+    file_path = os.path.join(folder_path, "Average_Eigenvalue_for_chaotic_regime.txt")
+    f = open(file_path, "w")
+    f.write(str(dof) + "\n")
+    Data_len = len(Time_step)
+    for i in range(Data_len):
+        f.write(str(Time_step[i] / Period) + " ")
+    f.write("\n")
+
+    for i in range(dof * 2):
+        for j in range(Data_len):
+            f.write(str(Average_Eigenvalue_list[i][j]) + " ")
+        f.write("\n")
+
+    f.close()
+
+    file_path1 = os.path.join(folder_path, "Largest_Eigenvalue_for_chaotic_regime.txt")
+    f = open(file_path1, "w")
+    f.write(str(dof) + "\n")
+    Data_len = len(Time_step)
+    for i in range(Data_len):
+        f.write(str(Time_step[i] / Period) + " ")
+    f.write("\n")
+
+    for i in range(dof * 2):
+        for j in range(Data_len):
+            f.write(str(Largest_Eigenvalue_List[i][j]) + " ")
+        f.write("\n")
+
+    f.close()
+
+
+    plt.show()
+
+
 def Plot_Trajectory_SCCL2():
     # This parameter tune the chaos
     V0 = 300
@@ -452,10 +698,10 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     # specify initial position and angle
     phase_jitter = 0.001
     action_jitter = 0.001
-    Initial_action = [2, 2, 3, 3, 3, 2]
-    # Initial_action = [6.3809, 3.2045, 5.5516, 2.8994, 5.1202, 6.0236]
+
     Initial_action = [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
-    Initial_action1 = [2, 2, 3, 3, 3 + action_jitter, 2]
+
+    # Initial_action1 = [2, 2, 3, 3, 3 + action_jitter, 2]
 
     max_action_in_all_simulation = 0
     Index = -1 # Index for max action angle.
@@ -465,9 +711,10 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
 
     for i in range(Iteration_number):
-        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-        Initial_angle = [14.753, 6.216, 4.992, 9.7515, 9.314, 9.846]
-        Initial_angle = [31.4, 6.04, 8.8, 16.3, 19.86, 14.386]
+        Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+
+        # Initial_angle = [30.93947782165516, 6.097124720812282, 8.845719425253785, 16.528919283844296, 20.21703311486376, 14.099748439492283]
+
         Initial_angle = [31.93947782165516, 6.097124720812282, 8.845719425253785, 16.528919283844296, 20.21703311486376, 14.099748439492283]
         # for j in range(dof):
         #     Initial_angle[j] = (0.02 * (np.random.random()-0.5) * 2 +1) * Initial_angle[j]
@@ -480,6 +727,8 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
         # solve dynamics
         sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+
+        # sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian_back_in_time(Initial_position,Time_step,frequency, Coefficient, nquanta_list)
 
         max_action = np.max( [sol[:][i] for i in range(dof)] )
 
@@ -560,11 +809,16 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     sol_transpose = np.transpose(sol)
     for i in range(dof):
         print('action ' + str(i+1))
-        print(sol_transpose[i][-20:-10])
+        print(sol_transpose[i][-50:-10])
 
     for i in range(dof):
         print('angle  ' + str(i+1))
-        print(sol_transpose[i + dof][-20:-10])
+        print(sol_transpose[i + dof][-50:-10])
+
+    # Energy_list = [  np.sum(np.array(sol[i][:dof] ) * np.array(frequency)) for i in range(len(sol)) ]
+    # print('Energy:  ')
+    # print(Energy_list)
+    # print(min(Energy_list))
 
     plt.show()
 
