@@ -193,7 +193,7 @@ def Analyze_Stability_Matrix_change_action():
 
 
 
-def Analyze_Stability_Matrix_for_xp(folder_path):
+def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     matplotlib.rcParams.update({'font.size': 14})
     D = 32924
 
@@ -436,33 +436,33 @@ def Analyze_Stability_Matrix_for_xp(folder_path):
     ax3.set_yscale('log')
 
     # save data:
-    file_path = os.path.join(folder_path,"Microcanonical Average Eigenvalue.txt")
-    f = open(file_path,"w")
-    f.write(str(dof) + "\n")
-    Data_len = len(Time_step)
-    for i in range(Data_len):
-        f.write(str(Time_step[i] / Period) + " ")
-    f.write("\n")
-
-    for i in range(dof * 2):
-        for j in range(Data_len):
-            f.write(str(Average_Eigenvalue_list[i][j]) + " ")
-        f.write("\n")
-
-    f.close()
-
-    log_path = os.path.join(folder_path,"Micaocanonical Average action angle.txt")
-    f1 = open(log_path,"w")
-    f1.write(str(Iterate_number) + "\n")
-    for i in range(Iterate_number):
-        for j in range(dof):
-            f1.write(str(Initial_action_list[i][j]) + " ")
-        f1.write("\n")
-        for j in range(dof):
-            f1.write(str(Initial_angle_list[i][j]) + " ")
-        f1.write("\n")
-
-    f1.close()
+    # file_path = os.path.join(folder_path,"Microcanonical Average Eigenvalue.txt")
+    # f = open(file_path,"w")
+    # f.write(str(dof) + "\n")
+    # Data_len = len(Time_step)
+    # for i in range(Data_len):
+    #     f.write(str(Time_step[i] / Period) + " ")
+    # f.write("\n")
+    #
+    # for i in range(dof * 2):
+    #     for j in range(Data_len):
+    #         f.write(str(Average_Eigenvalue_list[i][j]) + " ")
+    #     f.write("\n")
+    #
+    # f.close()
+    #
+    # log_path = os.path.join(folder_path,"Micaocanonical Average action angle.txt")
+    # f1 = open(log_path,"w")
+    # f1.write(str(Iterate_number) + "\n")
+    # for i in range(Iterate_number):
+    #     for j in range(dof):
+    #         f1.write(str(Initial_action_list[i][j]) + " ")
+    #     f1.write("\n")
+    #     for j in range(dof):
+    #         f1.write(str(Initial_angle_list[i][j]) + " ")
+    #     f1.write("\n")
+    #
+    # f1.close()
 
 
     plt.show()

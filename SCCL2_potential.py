@@ -69,13 +69,15 @@ def SCCL2_Diagonal_Hamiltonian(frequency,action):
 def SCCL2_Offdiagonal_coupling(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list):
     V = 0
     for nquanta in nquanta_list:
-        coupling = V0
+        coupling = 3050
 
         for i in range(len(nquanta)):
             ni = nquanta[i]
             if ni!=0:
-                coupling = coupling * pow(-1, ni) * pow( pow(frequency[i]/f0,1/2) * scaling_parameter, ni ) \
-                * pow(2 * np.sqrt(action[i]) * np.cos(angle[i]) , ni )
+                # coupling = coupling * pow(-1, ni) * pow( pow(frequency[i]/f0,1/2) * scaling_parameter, ni ) \
+                # * pow(2 * np.sqrt(action[i]) * np.cos(angle[i]) , ni )
+
+                coupling = coupling * pow(-1 , ni) *pow( pow(frequency[i] , 1/2) / 270 , ni ) * pow( 2 * np.sqrt(action[i]) * np.cos(angle[i]) , ni )
 
         V = V + coupling
 
@@ -90,7 +92,7 @@ def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, n
     Omega_list = []
     D = 10000
     for i in range(dof):
-        Omega = frequency[i] - pow(frequency[i],2) / (2*D)  * action[i]
+        Omega = frequency[i]
         Omega_list.append(Omega)
 
 
@@ -103,7 +105,7 @@ def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, n
             continue
 
         for nquanta in nquanta_list:
-            coupling = V0
+            coupling = 3050
             if(nquanta[i] == 0):
                 continue
             for j in range(dof):
@@ -111,8 +113,11 @@ def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, n
                     continue
                 nj = nquanta[j]
 
-                coupling = coupling * pow(-1,nj) * np.power(scaling_parameter * pow(frequency[j] / f0 , 0.5) , nj ) *\
-                np.power(2 * pow(action[j] , 0.5) * np.cos(angle[j]) , nj )
+                # coupling = coupling * pow(-1,nj) * np.power(scaling_parameter * pow(frequency[j] / f0 , 0.5) , nj ) *\
+                # np.power(2 * pow(action[j] , 0.5) * np.cos(angle[j]) , nj )
+
+                coupling = coupling * pow(-1 , nj) *pow( pow(frequency[j] , 1/2) / 270 , nj ) * pow( 2 * np.sqrt(action[j]) * np.cos(angle[j]) , nj )
+
 
             coupling = coupling * (nquanta[i]/2) / action[i]
 
@@ -137,7 +142,7 @@ def  SCCL2_action_velocity(action, angle, V0,  scaling_parameter, frequency, f0,
         partial_V_partial_theta = 0
 
         for nquanta in nquanta_list:
-            coupling = V0
+            coupling = 3050
             if(nquanta[i] == 0):
                 continue
 
@@ -145,8 +150,10 @@ def  SCCL2_action_velocity(action, angle, V0,  scaling_parameter, frequency, f0,
                 if(nquanta[j] == 0):
                     continue
                 nj = nquanta[j]
-                coupling = coupling * pow(-1,nj) * np.power( scaling_parameter * pow(  frequency[j] / f0 ,0.5) , nj ) * \
-                           pow(2 * pow(action[j] ,0.5) * np.cos(angle[j]) , nj)
+                # coupling = coupling * pow(-1,nj) * np.power( scaling_parameter * pow(  frequency[j] / f0 ,0.5) , nj ) * \
+                #            pow(2 * pow(action[j] ,0.5) * np.cos(angle[j]) , nj)
+
+                coupling = coupling * pow(-1 , nj) *pow( pow(frequency[j] , 1/2) / 270 , nj ) * pow( 2 * np.sqrt(action[j]) * np.cos(angle[j]) , nj )
 
             coupling = coupling * nquanta[i] * (-np.tan(angle[i]))
 

@@ -36,7 +36,7 @@ def anharmonic_oscillator(y,t,frequency,V_phi,D,Tuple_list):
     return dydt
 
 
-def SCCL2(y,t, V0, scaling_parameter ,frequency,f0, nquanta_list):
+def Other_Molecules(y,t, V0, scaling_parameter ,frequency,f0, nquanta_list):
     '''
 
     :param y: [action, angle] 2*dof array
@@ -91,9 +91,9 @@ def Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list
 
     return sol
 
-def Evolve_dynamics_SCCL2(Initial_position, Time_step,V0, scaling_parameter ,frequency,f0, nquanta_list ):
+def Evolve_dynamics_Other_Molecules(Initial_position, Time_step,V0, scaling_parameter ,frequency,f0, nquanta_list ):
 
-    sol = odeint(SCCL2,Initial_position,Time_step, args = (V0, scaling_parameter ,frequency,f0, nquanta_list) )
+    sol = odeint(Other_Molecules,Initial_position,Time_step, args = (V0, scaling_parameter ,frequency,f0, nquanta_list) )
 
     return sol
 
@@ -107,7 +107,7 @@ def Plot_Trajectory():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 40
+    V_phi = 7
     # V_phi = 0
 
     dof = 6
@@ -116,7 +116,7 @@ def Plot_Trajectory():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.1
+    final_time = 0.03
 
     Time_step = np.linspace(0,final_time,500)
 
