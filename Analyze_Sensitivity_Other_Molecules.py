@@ -47,12 +47,16 @@ def SCCL2_Analyze_Sensitivity_number_operator():
 
     Initial_position = Initial_action + Initial_angle1
 
-    sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
+    nquanta_list_trans = np.transpose(nquanta_list)
+
+    sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_trans)
 
     Period = 0.03
 
     Sol_diff_list = []
     phase_jitter = 0.001
+
+    nquanta_list_trans = np.transpose(nquanta_list)
 
     for i in range(dof):
         phase_change = np.zeros(dof)
@@ -63,7 +67,7 @@ def SCCL2_Analyze_Sensitivity_number_operator():
 
         Initial_position = Initial_action + Initial_angle2
 
-        sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
+        sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list, nquanta_list_trans)
 
         Sol_diff = np.array(sol1) - np.array(sol)
 
@@ -144,7 +148,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 100
+    Iterate_number = 1
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
@@ -157,9 +161,11 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
     Iteration_number_per_core = int(Iterate_number / num_proc)
     Iterate_number = Iteration_number_per_core * num_proc
 
+    nquanta_list_trans = np.transpose(nquanta_list)
 
     for _ in range(Iteration_number_per_core):
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+        Initial_angle = [3.9302766223002163, 4.316904859638711, 6.126837683689183, 3.360619256648054, 4.475984535869592, 3.7618713275911486, 0.9750317120466224, 3.1014012062813614]
         random_angle_list.append(Initial_angle)
        # print('initial action')
         # print(Initial_action)
@@ -168,7 +174,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         Initial_position = Initial_action + Initial_angle
 
-        sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
+        sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list ,nquanta_list_trans)
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
@@ -182,7 +188,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             Initial_position = Initial_action1 + Initial_angle
 
-            sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
+            sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list, nquanta_list_trans)
 
             Sol_change_list.append(sol1)
 
@@ -196,7 +202,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             Initial_position = Initial_action + Initial_angle1
 
-            sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list)
+            sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list, nquanta_list_trans)
 
             Sol_change_list.append(sol1)
 
@@ -763,8 +769,9 @@ def Plot_Trajectory_SCCL2():
 
     Initial_position = Initial_action + Initial_angle1
 
+    nquanta_list_trans = np.transpose(nquanta_list)
     # solve dynamics
-    sol = Evolve_dynamics_Other_Molecules(Initial_position, Time_step, V0, scaling_parameter, frequency, f0, nquanta_list)
+    sol = Evolve_dynamics_Other_Molecules(Initial_position, Time_step, V0, scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans)
 
     Period = 0.03
 
@@ -814,7 +821,7 @@ def Plot_Trajectory_SCCL2():
     for i in range(Len):
         action_t = action_t_list[i]
         angle_t = angle_t_list[i]
-        angle_velocity = SCCL2_angle_velocity(action_t,angle_t,V0,scaling_parameter,frequency,f0,nquanta_list)
+        angle_velocity = SCCL2_angle_velocity(action_t,angle_t,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_trans)
         action_velocity = SCCL2_action_velocity(action_t,angle_t, V0, scaling_parameter, frequency, f0, nquanta_list)
 
         angle_velocity_list.append(angle_velocity)
@@ -995,6 +1002,8 @@ def Sample_SCCL2_scaling_angular_velocity():
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
+    nquanta_list_tras = np.transpose(nquanta_list)
+
     Iteration_number = 1000
 
     min_max_abs_angle_velocity_in_all_sample = 100000
@@ -1006,7 +1015,7 @@ def Sample_SCCL2_scaling_angular_velocity():
         angle = np.random.random(6) * 2 * np.pi
         action = np.random.random(6) * 6
 
-        angle_velocity = SCCL2_angle_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list)
+        angle_velocity = SCCL2_angle_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_tras)
         # action_velocity = SCCL2_Realistic_Hamiltonian_action_velocity(action,angle,frequency,Coefficient, nquanta_list)
 
         max_abs_angle_velocity = np.mean(np.abs(angle_velocity))

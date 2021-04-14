@@ -28,13 +28,13 @@ def main():
     # SCCL2_Analyze_Sensitivity_number_operator()
 
     # SCCL2 scaling Hamiltonian xp stability matrix
-    folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentaone/Average 22232222/"
-    # Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path_SCCL2_scaling_Other_Molecule)
+    folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentaone/try/"
+    Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path_SCCL2_scaling_Other_Molecule)
 
 
     # plot OTOC for  SCCL2 Strickler Gruebele Hamiltonian
     folder_path_SCCL2_realistic_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SCCL2_realistic_Hamiltonian/try/"
-    Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path_SCCL2_realistic_model)
+    # Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path_SCCL2_realistic_model)
 
     # plot trajectory for scaling Hamiltonian
     # Plot_Trajectory_SCCL2()

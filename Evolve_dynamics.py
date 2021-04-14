@@ -36,7 +36,7 @@ def anharmonic_oscillator(y,t,frequency,V_phi,D,Tuple_list):
     return dydt
 
 
-def Other_Molecules(y,t, V0, scaling_parameter ,frequency,f0, nquanta_list):
+def Other_Molecules(y,t, V0, scaling_parameter ,frequency,f0, nquanta_list , nquanta_list_trans):
     '''
 
     :param y: [action, angle] 2*dof array
@@ -53,8 +53,8 @@ def Other_Molecules(y,t, V0, scaling_parameter ,frequency,f0, nquanta_list):
     action = y[0:dof]
     angle = y[dof:dof*2]
 
-    angle_velocity = SCCL2_angle_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list)
-    action_velocity = SCCL2_action_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list)
+    angle_velocity = SCCL2_angle_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list, nquanta_list_trans)
+    action_velocity = SCCL2_action_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_trans)
 
     angle_velocity = angle_velocity.tolist()
     action_velocity = action_velocity.tolist()
@@ -91,9 +91,9 @@ def Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list
 
     return sol
 
-def Evolve_dynamics_Other_Molecules(Initial_position, Time_step,V0, scaling_parameter ,frequency,f0, nquanta_list ):
+def Evolve_dynamics_Other_Molecules(Initial_position, Time_step,V0, scaling_parameter ,frequency,f0, nquanta_list , nquanta_list_trans ):
 
-    sol = odeint(Other_Molecules,Initial_position,Time_step, args = (V0, scaling_parameter ,frequency,f0, nquanta_list) )
+    sol = odeint(Other_Molecules,Initial_position,Time_step, args = (V0, scaling_parameter ,frequency,f0, nquanta_list , nquanta_list_trans) )
 
     return sol
 
