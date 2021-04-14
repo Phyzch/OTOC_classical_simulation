@@ -67,7 +67,20 @@ def prepare_Tuple_list(dof):
 
         Tuple_list.append(Tuple)
 
-    return Tuple_list
+    Tuple_list_len = len(Tuple_list)
+
+    # Generate new tuple list for vectorization when computing angular and action velocity
+    New_Tuple_list = []
+    for i in range(Tuple_list_len):
+        Tuple = Tuple_list[i]
+        A = np.zeros([dof])
+        for j in Tuple:
+            A[j] = 1
+
+        New_Tuple_list.append(A)
+    New_Tuple_list = np.array(New_Tuple_list)
+
+    return New_Tuple_list
 
 def compute_angle_velocity(frequency,action, angle, D, V_phi , Tuple_list):
     '''
@@ -89,26 +102,25 @@ def compute_angle_velocity(frequency,action, angle, D, V_phi , Tuple_list):
         Omega_list.append(Omega)
 
     # contribution from V:
+    # Vectorize this part: V * 1/(2J_{i}) * [\prod ( 2 * sqrt(J_{j}) cos(\theta_{j} ) * Tuple_{i}]
 
-    Partial_V_partial_J_list = []
-    for i in range(dof):
-        if(action[i] != 0):
-            term1 = np.cos(angle[i]) * V_phi / pow(action[i],0.5)
-        else:
-            term1 = 0
+    # rearrange Tuple list from [0,2,4] to [1,0,1,0,1, ... ] :
+    Tuple_list_trans = np.transpose(Tuple_list)
 
-        partial_V_partial_J = 0
+    coupling_scaling = 2 * np.sqrt(action) * np.cos(angle)
+    # coupling_scaling : [dof] .  New_tuple_list : [list_len, dof]
+    Coupling = coupling_scaling ** Tuple_list
+    # Now Coupling_prod have size [list_len]
+    Coupling_prod = np.prod(Coupling , axis = 1)
+    # Now * n_{i}
+    Coupling_prod = Coupling_prod * Tuple_list_trans
 
-        for tuple in Tuple_list:
-            if i in tuple:
-                coupling = term1
-                for index in tuple:
-                    if(index!= i):
-                        coupling = coupling * 2 * pow(action[index],0.5) * np.cos(angle[index])
+    Coupling_prod_sum = np.sum(Coupling_prod , axis = 1)
 
-                partial_V_partial_J = partial_V_partial_J + coupling
+    Coupling_prod_sum = Coupling_prod_sum * V_phi
 
-        Partial_V_partial_J_list.append(partial_V_partial_J)
+    Partial_V_partial_J_list = Coupling_prod_sum / ( 2* np.array(action))
+
 
     Omega_list = np.array(Omega_list)
     Partial_V_partial_J_list = np.array(Partial_V_partial_J_list)
@@ -128,27 +140,23 @@ def compute_action_velocity(V_phi,action,angle,Tuple_list):
     '''
     dof = len(action)
 
-    action_velocity_list = []
 
-    for i in range(dof):
-        partial_V_partial_theta = 0
+    Tuple_list_trans = np.transpose(Tuple_list)
 
-        term1 = V_phi * 2 * pow(action[i],0.5) * (-np.sin(angle[i]))
+    coupling_scaling = 2 * np.sqrt(action) * np.cos(angle)
+    # coupling_scaling : [dof] .  New_tuple_list : [list_len, dof]
+    Coupling = coupling_scaling ** Tuple_list
+    # Now Coupling_prod have size [list_len]
+    Coupling_prod = np.prod(Coupling , axis = 1)
+    # Now * n_{i}
+    Coupling_prod = Coupling_prod * Tuple_list_trans
 
-        for tuple in Tuple_list:
-            if(i in tuple):
-                coupling = term1
-                for index in tuple:
-                    if(index!=i):
-                        coupling = coupling * 2 * pow(action[index],0.5) * np.cos(angle[index])
+    Coupling_prod_sum = np.sum(Coupling_prod , axis = 1)
+    Coupling_prod_sum = Coupling_prod_sum * V_phi
 
-                partial_V_partial_theta = partial_V_partial_theta + coupling
+    partial_V_partial_theta = Coupling_prod_sum * (-np.tan(angle))
 
-        action_velocity = - partial_V_partial_theta
-
-        action_velocity_list.append(action_velocity)
-
-    action_velocity_list = np.array(action_velocity_list)
+    action_velocity_list = - partial_V_partial_theta
 
     return action_velocity_list
 

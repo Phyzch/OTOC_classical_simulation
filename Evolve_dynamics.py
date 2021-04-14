@@ -23,8 +23,8 @@ def anharmonic_oscillator(y,t,frequency,V_phi,D,Tuple_list):
     action = y[0:dof]
     angle = y[dof:2*dof]
 
-    angle_velocity = compute_angle_velocity(frequency,action,angle,D,V_phi,Tuple_list)
     action_velocity = compute_action_velocity(V_phi,action,angle,Tuple_list)
+    angle_velocity = compute_angle_velocity(frequency,action,angle,D,V_phi,Tuple_list)
 
     angle_velocity = angle_velocity.tolist()
     action_velocity = action_velocity.tolist()
