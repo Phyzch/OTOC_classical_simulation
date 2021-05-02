@@ -3,7 +3,7 @@ from scipy.integrate import odeint
 from Potential import compute_angle_velocity, compute_action_velocity
 from Potential import prepare_Tuple_list
 import matplotlib.pyplot as plt
-from SCCL2_potential import SCCL2_angle_velocity, SCCL2_action_velocity
+from SCCL2_potential import Other_molecule_angle_velocity, Other_molecule_action_velocity
 from SCCL2_potential import SCCL2_Realistic_Hamiltonian_action_velocity, SCCL2_Realistic_Hamiltonian_angle_velocity
 
 cf = 2 * np.pi * 0.0299792458

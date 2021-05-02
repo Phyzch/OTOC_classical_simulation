@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from Evolve_dynamics import Evolve_dynamics_Other_Molecules , Evolve_dynamics_SCCL2_Realistic_Hamiltonian
-from SCCL2_potential import Generate_n_quanta_list_for_SCCL2, SCCL2_angle_velocity, SCCL2_action_velocity, SCCL2_Realistic_Hamiltonian_action_velocity, SCCL2_Realistic_Hamiltonian_angle_velocity
+from SCCL2_potential import Generate_n_quanta_list_for_SCCL2, Other_molecule_angle_velocity, Other_molecule_action_velocity, SCCL2_Realistic_Hamiltonian_action_velocity, SCCL2_Realistic_Hamiltonian_angle_velocity
 from SCCL2_potential import Read_Realistic_SCCL2
 from Evolve_back_in_time import Evolve_dynamics_SCCL2_Realistic_Hamiltonian_back_in_time
+from Evolve_dynamics_Using_Bulirsch import Evolve_dynamics_Other_Molecule_BS_method
 import os
 
 from mpi4py import MPI
@@ -163,6 +164,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list_trans = np.transpose(nquanta_list)
 
+
     for _ in range(Iteration_number_per_core):
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
         Initial_angle = [3.9302766223002163, 4.316904859638711, 6.126837683689183, 3.360619256648054, 4.475984535869592, 3.7618713275911486, 0.9750317120466224, 3.1014012062813614]
@@ -174,7 +176,14 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         Initial_position = Initial_action + Initial_angle
 
-        sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list ,nquanta_list_trans)
+        # sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list ,nquanta_list_trans)
+        _, sol = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
+                                                             frequency, f0, nquanta_list, nquanta_list_trans)
+
+        sol_len = len(sol)
+        if(sol_len < Time_step_len):
+            zero_array = np.zeros( (Time_step_len - sol_len , 2 * dof) )
+            sol = np.concatenate((sol, zero_array), axis = 0 )
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
@@ -188,7 +197,15 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             Initial_position = Initial_action1 + Initial_angle
 
-            sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list, nquanta_list_trans)
+            # sol1 = Evolve_dynamics_Other_Molecules(Initial_position, Time_step, V0, scaling_parameter, frequency, f0,
+            #                                       nquanta_list, nquanta_list_trans)
+
+            _, sol1 = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
+                                                              frequency, f0, nquanta_list, nquanta_list_trans)
+            sol_len = len(sol1)
+            if (sol_len < Time_step_len):
+                zero_array = np.zeros((Time_step_len - sol_len, 2 * dof))
+                sol1 = np.concatenate((sol1, zero_array), axis=0)
 
             Sol_change_list.append(sol1)
 
@@ -202,7 +219,15 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             Initial_position = Initial_action + Initial_angle1
 
-            sol1 = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list, nquanta_list_trans)
+            # sol1 = Evolve_dynamics_Other_Molecules(Initial_position, Time_step, V0, scaling_parameter, frequency, f0,
+            #                                       nquanta_list, nquanta_list_trans)
+
+            _, sol1 = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
+                                                              frequency, f0, nquanta_list, nquanta_list_trans)
+            sol_len = len(sol1)
+            if (sol_len < Time_step_len):
+                zero_array = np.zeros((Time_step_len - sol_len, 2 * dof))
+                sol1 = np.concatenate((sol1, zero_array), axis=0)
 
             Sol_change_list.append(sol1)
 
@@ -259,12 +284,17 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             for i in range(2*dof):
                 for j in range(dof):
+                    if(Initial_action[j] != 0):
                     # {Q_{i}(t) ,Q_{j}}
-                    Stability_Matrix[i][j] = (Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(2 * Initial_action[j]) * np.sin(Initial_angle[j]) +
-                                              Diff_XP_matrix_list[j+dof][i][t]/phase_jitter * np.cos(Initial_angle[j]) / np.sqrt(2 * Initial_action[j])  )   # {, Q_{j} }
-                    # {Q_{i}(t) , P_{j}}
-                    Stability_Matrix[i][j+dof] =  (Diff_XP_matrix_list[j][i][t] / action_jitter *  np.sqrt(2*Initial_action[j]) * np.cos(Initial_angle[j]) -
-                                              Diff_XP_matrix_list[j+dof][i][t]/phase_jitter * np.sin(Initial_angle[j]) / np.sqrt(2*Initial_action[j]) )      # { , P_{j}}
+                        Stability_Matrix[i][j] = (Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(2 * Initial_action[j]) * np.sin(Initial_angle[j]) +
+                                                  Diff_XP_matrix_list[j+dof][i][t]/phase_jitter * np.cos(Initial_angle[j]) / np.sqrt(2 * Initial_action[j])  )   # {, Q_{j} }
+                        # {Q_{i}(t) , P_{j}}
+                        Stability_Matrix[i][j+dof] =  (Diff_XP_matrix_list[j][i][t] / action_jitter *  np.sqrt(2*Initial_action[j]) * np.cos(Initial_angle[j]) -
+                                                  Diff_XP_matrix_list[j+dof][i][t]/phase_jitter * np.sin(Initial_angle[j]) / np.sqrt(2*Initial_action[j]) )      # { , P_{j}}
+
+                    else:
+                        Stability_Matrix[i][j] = 0
+                        Stability_Matrix[i][j+dof] = 0
 
             Stability_Matrix_list.append(Stability_Matrix)
 
@@ -334,6 +364,18 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         random_angle_list = np.reshape(recv_angle_list,
                                        (recv_angle_list_shape[0] * recv_angle_list_shape[1] , recv_angle_list_shape[2])
                                        )
+
+        # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
+        min_nonzero_len = 100000
+        for i in range(Iterate_number):
+            nonzero_len = len ( [ i for i in  Eigenvalue_List_in_all_simulation[i][0] if i!=0 ])
+            if(min_nonzero_len > nonzero_len):
+                min_nonzero_len = nonzero_len
+
+        Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:,:,:min_nonzero_len]
+        Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, : ,:min_nonzero_len ]
+
+        # -----------------------------------------------------------
 
         # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
         Largest_Lypunov_exponent_in_all_simulation = 0
@@ -738,7 +780,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
 
 
-def Plot_Trajectory_SCCL2():
+def Plot_Trajectory_Other_Molecules():
     # This parameter tune the chaos
     V0 = 3050
 
@@ -753,21 +795,18 @@ def Plot_Trajectory_SCCL2():
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.015
+    final_time = 0.021
 
     Time_step = np.linspace(0, final_time, 100)
 
     # specify initial position and angle
-    Initial_action = [2, 2, 2, 3, 2, 2, 2, 2, 2]
-    Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
+    # Initial_action = [2, 2, 2, 3, 2, 2, 2, 2, 2]
+    Initial_action = [0, 0, 0, 1, 0, 0, 1, 0, 0]
 
     Initial_angle = [2.4442179158763073, 1.0017940119372089, 4.250017300134825, 2.5048770218889747, 0.5626141486498147,
                      3.158573153008315, 0.7225434637992191, 6.038088800623476, 4.530226217933312]
 
-    print('initial angle:')
-    print(Initial_angle1)
-
-    Initial_position = Initial_action + Initial_angle1
+    Initial_position = Initial_action + Initial_angle
 
     nquanta_list_trans = np.transpose(nquanta_list)
     # solve dynamics
@@ -775,76 +814,53 @@ def Plot_Trajectory_SCCL2():
 
     Period = 0.03
 
-    phase_jitter = 0.001
-    action_jitter = 0.001
-
-    Initial_action = [2, 2, 3 + action_jitter, 3, 3, 2]
-
-    Initial_angle2 = np.array(Initial_angle1)
-    Initial_angle2 = Initial_angle2.tolist()
-
-    Initial_position = Initial_action + Initial_angle2
-
-    # sol1 = Evolve_dynamics_SCCL2(Initial_position, Time_step, V0, scaling_parameter, frequency, f0, nquanta_list)
-    #
-    # Sol_diff = np.array(sol1) - np.array(sol)
-
-    fig2, ax2 = plt.subplots(nrows=3, ncols=1)
+    fig2, ax2 = plt.subplots(nrows=1, ncols=1)
 
     for i in range(dof):
-        ax2[0].plot(Time_step / Period, sol[:, i] , label=' $\Delta$ J' + str(i + 1) + ' (t)')
-        ax2[1].plot(Time_step / Period, np.cos(sol[:, i + dof]) , label='$cos \phi$ ' + str(i + 1) + " (t)")
-        ax2[2].plot(Time_step/ Period, np.sin(sol[:,i+dof]) , label = '$sin \phi$ ' + str(i+1) + " (t)" )
+        ax2.plot(Time_step / Period, sol[:, i] , label=' J' + str(i + 1) + ' (t)')
 
-    ax2[0].legend(loc='best')
-    ax2[1].legend(loc='best')
-    ax2[2].legend(loc = 'best')
-    ax2[0].set_xlabel('t/T')
-    ax2[1].set_xlabel('t/T')
-    ax2[2].set_xlabel('t/T')
-
-    ax2[0].set_yscale('log')
+    ax2.legend(loc='best')
+    ax2.set_xlabel('t/T')
+    ax2.set_yscale('log')
     # ax2[1].set_yscale('log')
 
     # compute angle velocity at given time
-    fig3 , ax3 = plt.subplots(nrows=2,ncols=1)
-    action_t_list = [ sol[:, i ] for i in range(dof) ]
-    angle_t_list = [sol[:,i+dof] for i in range(dof)]
+    # fig3 , ax3 = plt.subplots(nrows=2,ncols=1)
+    # action_t_list = [ sol[:, i ] for i in range(dof) ]
+    # angle_t_list = [sol[:,i+dof] for i in range(dof)]
+    #
+    # # data in the form [Time_step, dof]
+    # action_t_list = np.transpose(action_t_list)
+    # angle_t_list = np.transpose(angle_t_list)
+    #
+    # angle_velocity_list = []
+    # action_velocity_list = []
+    # Len = len(Time_step)
+    # for i in range(Len):
+    #     action_t = action_t_list[i]
+    #     angle_t = angle_t_list[i]
+    #     angle_velocity = Other_molecule_angle_velocity(action_t,angle_t,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_trans)
+    #     action_velocity = Other_molecule_action_velocity(action_t,angle_t, V0, scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans)
+    #
+    #     angle_velocity_list.append(angle_velocity)
+    #     action_velocity_list.append(action_velocity)
+    #
+    # angle_velocity_list = np.transpose(angle_velocity_list)
+    # action_velocity_list = np.transpose(action_velocity_list)
+    #
+    # for i in range(dof):
+    #     ax3[0].plot(Time_step / Period, action_velocity_list[i] * cf , label = 'action velocity ' + str(i+1))
+    #     ax3[1].plot(Time_step/ Period, angle_velocity_list[i] * cf, label = 'angle velocity  ' + str(i+1) )
+    #
+    # ax3[0].legend(loc='best')
+    # ax3[1].legend(loc='best')
+    # ax3[0].set_xlabel('t/T')
+    # ax3[1].set_xlabel('t/T')
+    #
+    # ax3[0].set_ylim([-400,400])
+    # ax3[1].set_ylim([-400,400])
 
-    # data in the form [Time_step, dof]
-    action_t_list = np.transpose(action_t_list)
-    angle_t_list = np.transpose(angle_t_list)
 
-    angle_velocity_list = []
-    action_velocity_list = []
-    Len = len(Time_step)
-    for i in range(Len):
-        action_t = action_t_list[i]
-        angle_t = angle_t_list[i]
-        angle_velocity = SCCL2_angle_velocity(action_t,angle_t,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_trans)
-        action_velocity = SCCL2_action_velocity(action_t,angle_t, V0, scaling_parameter, frequency, f0, nquanta_list)
-
-        angle_velocity_list.append(angle_velocity)
-        action_velocity_list.append(action_velocity)
-
-    angle_velocity_list = np.transpose(angle_velocity_list)
-    action_velocity_list = np.transpose(action_velocity_list)
-
-    for i in range(dof):
-        ax3[0].plot(Time_step / Period, action_velocity_list[i] * cf , label = 'action velocity ' + str(i+1))
-        ax3[1].plot(Time_step/ Period, angle_velocity_list[i] * cf, label = 'angle velocity  ' + str(i+1) )
-
-    ax3[0].legend(loc='best')
-    ax3[1].legend(loc='best')
-    ax3[0].set_xlabel('t/T')
-    ax3[1].set_xlabel('t/T')
-
-    ax3[0].set_ylim([-400,400])
-    ax3[1].set_ylim([-400,400])
-
-
-
-    plt.show()
 
 def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
@@ -1015,7 +1031,7 @@ def Sample_SCCL2_scaling_angular_velocity():
         angle = np.random.random(6) * 2 * np.pi
         action = np.random.random(6) * 6
 
-        angle_velocity = SCCL2_angle_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_tras)
+        angle_velocity = Other_molecule_angle_velocity(action,angle,V0,scaling_parameter,frequency,f0,nquanta_list , nquanta_list_tras)
         # action_velocity = SCCL2_Realistic_Hamiltonian_action_velocity(action,angle,frequency,Coefficient, nquanta_list)
 
         max_abs_angle_velocity = np.mean(np.abs(angle_velocity))

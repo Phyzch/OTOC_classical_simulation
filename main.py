@@ -1,9 +1,10 @@
 import numpy
 import os
-from Evolve_dynamics import Plot_Trajectory
-from Analyze_Sensitivity_SWW import Analyze_Sensitivity_number_operator, Analyze_Stability_Matrix_change_action, Analyze_Stability_Matrix_for_xp_SWW
-from Analyze_Sensitivity_Other_Molecules import SCCL2_Analyze_Sensitivity_number_operator, Other_molecules_Analyze_Stability_Matrix_for_xp, Plot_Trajectory_SCCL2, Plot_Trajectory_SCCL2_Realistic_Hamiltonian, \
+from Analyze_Sensitivity_SWW import Analyze_Sensitivity_number_operator, Analyze_Stability_Matrix_change_action, Analyze_Stability_Matrix_for_xp_SWW, Plot_Trajectory_SWW
+from Analyze_Sensitivity_Other_Molecules import SCCL2_Analyze_Sensitivity_number_operator, Other_molecules_Analyze_Stability_Matrix_for_xp, Plot_Trajectory_Other_Molecules, Plot_Trajectory_SCCL2_Realistic_Hamiltonian, \
     Sample_SCCL2_Realistic_Hamiltonian_angular_velocity, Sample_SCCL2_scaling_angular_velocity , Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian
+
+from Evolve_dynamics_Using_Bulirsch import Plot_Trajectory_Other_molecule_BS_method
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -14,7 +15,7 @@ num_proc = comm.Get_size()
 def main():
 
     # Function for SWW model.
-    # Plot_Trajectory()
+    # Plot_Trajectory_SWW()
 
     # Analyze_Sensitivity_number_operator()
 
@@ -22,7 +23,7 @@ def main():
 
     # Analyze xp sensitivity for SWW model
     folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7/"
-    Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
+    # Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
 
     # Analyze number operator sensitivity for SCCL2
     # SCCL2_Analyze_Sensitivity_number_operator()
@@ -37,7 +38,9 @@ def main():
     # Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path_SCCL2_realistic_model)
 
     # plot trajectory for scaling Hamiltonian
-    # Plot_Trajectory_SCCL2()
+    # Plot_Trajectory_Other_Molecules()
+    # Plot_Trajectory_Other_molecule_BS_method()
+
 
     #plot trajectory for  Grueebele Strickler Hamiltonian
     # Plot_Trajectory_SCCL2_Realistic_Hamiltonian()

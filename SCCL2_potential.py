@@ -85,7 +85,7 @@ def SCCL2_Offdiagonal_coupling(action, angle, V0,  scaling_parameter, frequency,
 
 
 
-def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans):
+def Other_molecule_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans):
     dof = len(action)
 
     # add anharmonicity
@@ -96,7 +96,6 @@ def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, n
         Omega_list.append(Omega)
 
 
-    partial_V_partial_J_list = []
 
     # for vectorization: coupling_scaling = - freq[i] * (2* sqrt{J_{i}} * cos(theta(j)) / 270
     Coupling_scaling = []
@@ -104,29 +103,6 @@ def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, n
         A = - np.sqrt(frequency[j]) * 2* np.sqrt(action[j]) * np.cos(angle[j])/270
         Coupling_scaling.append(A)
     Coupling_scaling  = np.array(Coupling_scaling)
-
-    # Serial code. Vectorize this
-    # for i in range(dof):
-    #     partial_V_partial_J = 0
-    #     if(action[i] == 0):
-    #         partial_V_partial_J_list.append(0)
-    #         continue
-    #
-    #     for nquanta in nquanta_list:
-    #         coupling = 3050
-    #         if(nquanta[i] == 0):
-    #             continue
-    #         for j in range(dof):
-    #             if(nquanta[j] == 0):
-    #                 continue
-    #             nj = nquanta[j]
-    #
-    #             coupling = coupling  *pow( -1 *  pow(frequency[j] , 1/2) / 270 *  (2 * np.sqrt(action[j]) * np.cos(angle[j]) ) , nj )
-    #
-    #
-    #         coupling = coupling * (nquanta[i]/2) / action[i]
-    #         partial_V_partial_J = partial_V_partial_J + coupling
-    #     partial_V_partial_J_list.append(partial_V_partial_J)
 
     # After Vectorization
     # fixme: nquanta_list have size : [List_len,  dof]
@@ -142,44 +118,22 @@ def SCCL2_angle_velocity(action, angle, V0,  scaling_parameter, frequency, f0, n
     # nquanta_list_trans : [2 * dof, nquanta_list_len] .  coupling_list_prod : [nquanta_list_len ]
     coupling_list_prod_time_nquanta = np.sum(coupling_list_prod * nquanta_list_trans  , 1)
     # Now /( 2* J_{i})
-    partial_V_partial_J_list = coupling_list_prod_time_nquanta / (2 * np.array(action))
+    partial_V_partial_J_list = np.zeros(dof)
+    for i in range(dof):
+        if(action[i] != 0):
+            partial_V_partial_J_list[i] = coupling_list_prod_time_nquanta[i] / (2 * action[i])
+        else:
+            partial_V_partial_J_list[i] = 0
 
 
     angle_velocity = np.array(partial_V_partial_J_list) + np.array(Omega_list)
 
     return angle_velocity
 
-def  SCCL2_action_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans):
+def  Other_molecule_action_velocity(action, angle, V0,  scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans):
     dof = len(action)
 
     partial_V_partial_theta_list = []
-
-    # Serial code. Vectorize this:
-    # for i in range(dof):
-    #     if(action[i] == 0):
-    #         partial_V_partial_theta_list.append(0)
-    #         continue
-    #
-    #     partial_V_partial_theta = 0
-    #
-    #     for nquanta in nquanta_list:
-    #         coupling = 3050
-    #         if(nquanta[i] == 0):
-    #             continue
-    #
-    #         for j in range(dof):
-    #             if(nquanta[j] == 0):
-    #                 continue
-    #             nj = nquanta[j]
-    #             # coupling = coupling * pow(-1,nj) * np.power( scaling_parameter * pow(  frequency[j] / f0 ,0.5) , nj ) * \
-    #             #            pow(2 * pow(action[j] ,0.5) * np.cos(angle[j]) , nj)
-    #
-    #             coupling = coupling  *pow( - pow(frequency[j] , 1/2) / 270 * (2 * np.sqrt(action[j]) * np.cos(angle[j]) )  , nj )
-    #
-    #         coupling = coupling * nquanta[i] * (-np.tan(angle[i]))
-    #
-    #         partial_V_partial_theta = partial_V_partial_theta + coupling
-    #     partial_V_partial_theta_list.append(partial_V_partial_theta)
 
     # After Vectorization:
     Coupling_scaling = []
