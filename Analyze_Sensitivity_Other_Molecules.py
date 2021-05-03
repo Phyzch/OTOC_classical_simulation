@@ -143,13 +143,13 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.006
+    final_time = 0.03
 
-    Time_step_len = 10
+    Time_step_len = 100
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 1
+    Iterate_number = 20
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
@@ -167,7 +167,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     for _ in range(Iteration_number_per_core):
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-        Initial_angle = [3.9302766223002163, 4.316904859638711, 6.126837683689183, 3.360619256648054, 4.475984535869592, 3.7618713275911486, 0.9750317120466224, 3.1014012062813614]
+        # Initial_angle = [3.9302766223002163, 4.316904859638711, 6.126837683689183, 3.360619256648054, 4.475984535869592, 3.7618713275911486, 0.9750317120466224, 3.1014012062813614]
         random_angle_list.append(Initial_angle)
        # print('initial action')
         # print(Initial_action)
@@ -374,6 +374,8 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:,:,:min_nonzero_len]
         Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, : ,:min_nonzero_len ]
+
+        Time_step = Time_step [:min_nonzero_len]
 
         # -----------------------------------------------------------
 

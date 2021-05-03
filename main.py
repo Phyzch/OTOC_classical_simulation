@@ -29,7 +29,7 @@ def main():
     # SCCL2_Analyze_Sensitivity_number_operator()
 
     # SCCL2 scaling Hamiltonian xp stability matrix
-    folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentaone/try/"
+    folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentaone/Average 2232222 BS_method (20)/"
     Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path_SCCL2_scaling_Other_Molecule)
 
 
