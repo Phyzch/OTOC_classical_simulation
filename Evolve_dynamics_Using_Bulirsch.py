@@ -14,9 +14,11 @@ def Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, sc
 
     tol = 1e-6
 
-    time, position = bulStoer(Other_Molecules, t0, Initial_position, final_time, time_step_size, args = (V0, scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans) , tol = tol )
+    time, position , finish_simulation = bulStoer(Other_Molecules, t0, Initial_position, final_time, time_step_size, args = (V0, scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans) , tol = tol )
 
-    return time, position
+
+
+    return time, position , finish_simulation
 
 def Plot_Trajectory_Other_molecule_BS_method():
     # This parameter tune the chaos

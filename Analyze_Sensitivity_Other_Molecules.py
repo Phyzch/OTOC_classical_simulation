@@ -127,7 +127,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     scaling_parameter = 0.2
 
-    # Cyclopentaone
+    # Cyclopentane
     # frequency = [3062, 2914, 1445, 1349, 1275, 1203, 1043, 905, 695]
     # dof = 9
     # Initial_action = [2, 2, 2, 3, 2, 2, 2, 2,2]
@@ -136,14 +136,14 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
     # Cyclopentaone
     frequency = [2210 , 2222 , 2966 , 2945 , 2130 , 2126 , 2880 , 2880]
     dof = 8
-    Initial_action = [2 ,2 ,2 ,3 ,2 ,2 ,2 ,2]
+    Initial_action = [2 ,2 ,3 ,2 ,2 ,2 ,2 ,2]
     Initial_angle_for_largest_eigenvalue = np.zeros([dof]).tolist()
 
     f0 = 500
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.03
+    final_time = 0.005
 
     Time_step_len = 100
 
@@ -165,9 +165,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
     nquanta_list_trans = np.transpose(nquanta_list)
 
 
-    for _ in range(Iteration_number_per_core):
+    for iter_index in range(Iteration_number_per_core):
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-        # Initial_angle = [3.9302766223002163, 4.316904859638711, 6.126837683689183, 3.360619256648054, 4.475984535869592, 3.7618713275911486, 0.9750317120466224, 3.1014012062813614]
+        # Initial_angle = [4.87371406040547, 6.20316183022866, 4.093689463478892, 3.8541398433268963, 0.23028078649982597, 0.8565145819947704, 5.365277076121005, 2.9484079410970825]
+
         random_angle_list.append(Initial_angle)
        # print('initial action')
         # print(Initial_action)
@@ -177,9 +178,11 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         Initial_position = Initial_action + Initial_angle
 
         # sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list ,nquanta_list_trans)
-        _, sol = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
+        _, sol, finish_simulation = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
                                                              frequency, f0, nquanta_list, nquanta_list_trans)
 
+        if(finish_simulation == False):
+            print("Simulation failed with angle:  " + str(Initial_angle) +" and iter index :  " + str(iter_index) +"  for original dynamics" )
         sol_len = len(sol)
         if(sol_len < Time_step_len):
             zero_array = np.zeros( (Time_step_len - sol_len , 2 * dof) )
@@ -200,8 +203,12 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
             # sol1 = Evolve_dynamics_Other_Molecules(Initial_position, Time_step, V0, scaling_parameter, frequency, f0,
             #                                       nquanta_list, nquanta_list_trans)
 
-            _, sol1 = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
+            _, sol1 , finish_simulation = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
                                                               frequency, f0, nquanta_list, nquanta_list_trans)
+            if (finish_simulation == False):
+                print("Simulation failed with angle:  " + str(Initial_angle) + " and iter index :  " + str(
+                    iter_index) + "  for action perturbation for mode "+ str(i))
+
             sol_len = len(sol1)
             if (sol_len < Time_step_len):
                 zero_array = np.zeros((Time_step_len - sol_len, 2 * dof))
@@ -222,8 +229,12 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
             # sol1 = Evolve_dynamics_Other_Molecules(Initial_position, Time_step, V0, scaling_parameter, frequency, f0,
             #                                       nquanta_list, nquanta_list_trans)
 
-            _, sol1 = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
+            _, sol1, finish_simulation = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
                                                               frequency, f0, nquanta_list, nquanta_list_trans)
+            if (finish_simulation == False):
+                print("Simulation failed with angle:  " + str(Initial_angle) + " and iter index :  " + str(
+                    iter_index) + "  for angle perturbation for mode "+ str(i))
+
             sol_len = len(sol1)
             if (sol_len < Time_step_len):
                 zero_array = np.zeros((Time_step_len - sol_len, 2 * dof))
@@ -243,9 +254,12 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
             for i in range(dof):
                 J = sol[t][i]
                 phi = sol[t][i+dof]
-
-                Q = np.sqrt(2*J) * np.cos(phi)
-                P = np.sqrt(2*J) * np.sin(phi)
+                if(J >= 0):
+                    Q = np.sqrt(2*J) * np.cos(phi)
+                    P = np.sqrt(2*J) * np.sin(phi)
+                else:
+                    Q = 0
+                    P = 0
 
                 XP_matrix[i].append(Q)
                 XP_matrix[i+dof].append(P)
@@ -264,8 +278,12 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                     J = Sol_after_change[t][j]
                     phi = Sol_after_change[t][j + dof]
 
-                    Q = np.sqrt(2*J) * np.cos(phi)
-                    P = np.sqrt(2*J) * np.sin(phi)
+                    if (J >= 0):
+                        Q = np.sqrt(2 * J) * np.cos(phi)
+                        P = np.sqrt(2 * J) * np.sin(phi)
+                    else:
+                        Q = 0
+                        P = 0
 
                     XP_matrix_new[j].append(Q)
                     XP_matrix_new[j+dof].append(P)
@@ -400,8 +418,9 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         # plot result
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        for i in range( 2*dof):
-            ax.plot(np.array(Time_step) / Period, Eigen_value_list[i], label='Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+        # for i in range( 2*dof):
+        #     ax.plot(np.array(Time_step) / Period, Eigen_value_list[i], label='Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+        ax.plot(np.array(Time_step) / Period, Eigen_value_list[0], label=' Largest Eigenvalue  for $M^{2}$ ')
 
         ax.legend(loc='best')
         ax.set_xlabel('t/T')
@@ -412,6 +431,8 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         fig1, ax1 = plt.subplots(nrows=1, ncols=1)
         for i in range(2 * dof):
             ax1.plot(np.array(Time_step)/Period, Singular_value_list[i],label = 'Singular value '+ str(i+1) + ' for M' )
+        ax1.plot(np.array(Time_step) / Period, Singular_value_list[0], label='Largest Singular value for M')
+
         ax1.legend(loc = 'best')
         ax1.set_xlabel('t/T')
 
@@ -438,8 +459,11 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         Average_Eigenvalue_list = np.mean(Eigenvalue_List_in_all_simulation,0)
         Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation,0)
 
-        for i in range( 2*dof):
-            ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+        # for i in range( 2*dof):
+        #     ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+
+        ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[0],
+                 label='Largest Average Eigenvalue  for $M^{2}$ ')
 
         ax3.set_xlabel('t/T')
         ax3.set_ylabel('Average Eigenvalue')

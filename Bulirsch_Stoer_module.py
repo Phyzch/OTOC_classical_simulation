@@ -16,7 +16,13 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
             y0 = y1
             y1 = y2
 
-        return 0.5*(y1 + y0 + h*F(y1, x , *args))
+        Result = 0.5*(y1 + y0 + h*F(y1, x , *args))
+        dof = int( len(Result ) / 2)
+        for i in range(dof):
+            if(Result[i] < 0):
+                Result[i] = 0
+
+        return Result
 
     def richardson(r, k):
         # https://www.wikiwand.com/en/Richardson_extrapolation
@@ -38,6 +44,8 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
     r_old = r[1].copy()
 
     # Increase the number of integration points by 2 and refine result by Richardson extrapolation
+    e = 0
+    e_old = 10000
     for k in range(2,kMax):
         nSteps = 2*k
         r[k] = midpoint(F, x, y, xStop, nSteps , args)
@@ -46,11 +54,20 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
         # Compute RMS change in solution
         e = math.sqrt(sum((r[1] - r_old)**2)/n)
 
+        if( abs(e) > 2 * abs(e_old)):
+            print("May have divergence problem. ")
+            print("e old: " + str(e_old) + "  e:  " + str(e))
+            return r_old
+
         # Check for convergence
         if e < tol:
             return r[1]
-        r_old = r[1].copy()
 
+        r_old = r[1].copy()
+        e_old = e
+
+    print("error now:  " + str(e))
+    print('action:  ' + str(r[1]))
     print("Midpoint method did not converge")
 
 # Bulirsch-Stoer Algorithm:-
@@ -66,6 +83,8 @@ def bulStoer(F, x, y, xStop, H, args, tol=1.0e-6):
         H = increment of x at which results are stored
         F = user-supplied function that returns the array F(x,y) = {y’[0],y’[1],...,y’[n-1]} '''
 
+    finish_simulation = True
+
     X = []
     Y = []
     X.append(x)
@@ -78,8 +97,9 @@ def bulStoer(F, x, y, xStop, H, args, tol=1.0e-6):
 
         if(  type(y)!= np.ndarray ):
             print("no return value. Now break cycle.  t =  " + str(x))
+            finish_simulation = False
             break
         X.append(x)
         Y.append(y)
-    return array(X), array(Y)
+    return array(X), array(Y) , finish_simulation
 
