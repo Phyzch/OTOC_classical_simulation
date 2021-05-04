@@ -33,6 +33,7 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
             r[j] = (const*r[j+1] - r[j])/(const - 1.0)
         return
 
+    Finish_simulation = True
 
     kMax = 101
     n = len(y)
@@ -55,13 +56,16 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
         e = math.sqrt(sum((r[1] - r_old)**2)/n)
 
         if( abs(e) > 2 * abs(e_old)):
-            print("May have divergence problem. ")
-            print("e old: " + str(e_old) + "  e:  " + str(e))
-            return r_old
+            if(abs(e_old) > 0.1):
+                print("May have divergence problem. ")
+                print("e old: " + str(e_old) + "  e:  " + str(e))
+                Finish_simulation = False
+
+            return r_old , Finish_simulation
 
         # Check for convergence
         if e < tol:
-            return r[1]
+            return r[1] , Finish_simulation
 
         r_old = r[1].copy()
         e_old = e
@@ -69,6 +73,7 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
     print("error now:  " + str(e))
     print('action:  ' + str(r[1]))
     print("Midpoint method did not converge")
+    return r[1], Finish_simulation
 
 # Bulirsch-Stoer Algorithm:-
 
@@ -92,10 +97,10 @@ def bulStoer(F, x, y, xStop, H, args, tol=1.0e-6):
     while x < xStop:
 
         H = min(H,xStop - x)
-        y = integrate_BulirschStoeir(F, x, y, x + H, tol, args)   # Midpoint method
+        y, finish_simulation_this_time = integrate_BulirschStoeir(F, x, y, x + H, tol, args)   # Midpoint method
         x = x + H
 
-        if(  type(y)!= np.ndarray ):
+        if(  finish_simulation_this_time == False ):
             print("no return value. Now break cycle.  t =  " + str(x))
             finish_simulation = False
             break

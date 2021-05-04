@@ -136,20 +136,20 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
     # Cyclopentaone
     frequency = [2210 , 2222 , 2966 , 2945 , 2130 , 2126 , 2880 , 2880]
     dof = 8
-    Initial_action = [2 ,2 ,3 ,2 ,2 ,2 ,2 ,2]
+    Initial_action = [1 ,1 ,1 ,0 ,0 ,1 ,0 ,0]
     Initial_angle_for_largest_eigenvalue = np.zeros([dof]).tolist()
 
     f0 = 500
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.005
+    final_time = 0.1
 
-    Time_step_len = 100
+    Time_step_len = 150
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 20
+    Iterate_number = 100
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
