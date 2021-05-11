@@ -185,28 +185,31 @@ def SCCL2_Realistic_Hamiltonian_angle_velocity(action, angle, frequency, Coeffic
         Omega = frequency[i] - pow(frequency[i],2) / (2*D)  * action[i]
         Omega_list.append(Omega)
 
+    # After Vectorization:
+    Coupling_scaling = []
+    for j in range(dof):
+        if(action[j] >= 0):
+            A =   np.sqrt( 2 * action[j]) * np.cos(angle[j])
+        else:
+            A = 0
+
+        Coupling_scaling.append(A)
+
+    Coupling_scaling = np.array(Coupling_scaling)
+    nquanta_list = np.array(nquanta_list)
+    coupling_list = Coupling_scaling ** nquanta_list
+    coupling_list_prod = np.prod(coupling_list, axis=1)
+
+    nquanta_list_trans = np.transpose(nquanta_list)
+
+    coupling_list_prod_time_Coefficient_time_nquanta = np.sum( Coefficient * coupling_list_prod * nquanta_list_trans , 1)
+
+    partial_V_partial_J_list = np.zeros(dof)
     for i in range(dof):
-        partial_V_partial_J = 0
-        if (action[i] == 0):
-            partial_V_partial_J_list.append(0)
-            continue
-        Len = len(Coefficient)
-        for j in range(Len):
-            nquanta = nquanta_list[j]
-            if (nquanta[i] == 0):
-                continue
-
-            coupling = Coefficient[j]
-            for k in range(dof):
-                nk = nquanta[k]
-                if(nquanta[k] == 0):
-                    continue
-                coupling = coupling * pow(np.sqrt(2 * action[k]) * np.cos(angle[k]) , nk)
-
-            coupling = coupling * (nquanta[i] /2 ) / action[i]
-            partial_V_partial_J = partial_V_partial_J + coupling
-
-        partial_V_partial_J_list.append(partial_V_partial_J)
+        if(action[i] != 0):
+            partial_V_partial_J_list[i] = coupling_list_prod_time_Coefficient_time_nquanta[i] / ( 2* action[i] )
+        else:
+            partial_V_partial_J_list[i] = 0
 
     angle_velocity = np.array(partial_V_partial_J_list) + np.array(frequency)
     # angle_velocity = np.array(partial_V_partial_J_list) + np.array(Omega_list)
@@ -224,33 +227,31 @@ def SCCL2_Realistic_Hamiltonian_action_velocity(action, angle, frequency, Coeffi
     :return:
     '''
     dof = len(action)
-    partial_V_partial_theta_list = []
 
+    # vectorization
+    Coupling_scaling = []
+    for j in range(dof):
+        if(action[j] >= 0):
+            A =   np.sqrt( 2 * action[j]) * np.cos(angle[j])
+        else:
+            A = 0
+
+        Coupling_scaling.append(A)
+
+    Coupling_scaling = np.array(Coupling_scaling)
+    nquanta_list = np.array(nquanta_list)
+    coupling_list = Coupling_scaling ** nquanta_list
+    coupling_list_prod = np.prod(coupling_list, axis=1)
+
+    nquanta_list_trans = np.transpose(nquanta_list)
+
+    coupling_list_prod_time_Coefficient_time_nquanta = np.sum( Coefficient * coupling_list_prod * nquanta_list_trans , 1)
+    partial_V_partial_theta_list = np.zeros(dof)
     for i in range(dof):
-        partial_V_partial_theta = 0
-
-        if(action[i] == 0):
-            partial_V_partial_theta_list.append(0)
-            continue
-
-        Len = len(Coefficient)
-        for j in range(Len):
-            nquanta = nquanta_list[j]
-            if nquanta[i] == 0:
-                continue
-
-            coupling = Coefficient[j]
-
-            for k in range(dof):
-                nk = nquanta[k]
-                if (nquanta[k] == 0):
-                    continue
-                coupling = coupling * pow(np.sqrt(2 * action[k]) * np.cos(angle[k]), nk)
-
-            coupling = coupling * nquanta[i] * (-np.tan(angle[i]))
-            partial_V_partial_theta = partial_V_partial_theta + coupling
-
-        partial_V_partial_theta_list.append(partial_V_partial_theta)
+        if (action[i] != 0):
+            partial_V_partial_theta_list[i] = coupling_list_prod_time_Coefficient_time_nquanta[i] * (-np.tan(angle[i]))
+        else:
+            partial_V_partial_theta_list[i] = 0
 
     action_velocity = - np.array(partial_V_partial_theta_list)
 

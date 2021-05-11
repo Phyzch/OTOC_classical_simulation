@@ -143,13 +143,13 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.1
+    final_time = 2
 
-    Time_step_len = 150
+    Time_step_len = 4000
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 100
+    Iterate_number = 10
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []

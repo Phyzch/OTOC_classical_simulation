@@ -56,7 +56,7 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
         e = math.sqrt(sum((r[1] - r_old)**2)/n)
 
         if( abs(e) > 2 * abs(e_old)):
-            if(abs(e_old) > 0.1):
+            if(abs(e_old) > 1):
                 print("May have divergence problem. ")
                 print("e old: " + str(e_old) + "  e:  " + str(e))
                 Finish_simulation = False
