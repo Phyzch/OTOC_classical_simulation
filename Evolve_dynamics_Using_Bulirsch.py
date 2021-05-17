@@ -38,7 +38,7 @@ def Evolve_dynamics_Realistic_SCCL2_BS_method(Initial_position, Time_step, frequ
 
 def Plot_Trajectory_Other_molecule_BS_method():
     matplotlib.rcParams.update({'font.size': 20})
-    Iter_number = 50
+    Iter_number = 1
 
     # This parameter tune the chaos
     V0 = 3050
@@ -59,14 +59,15 @@ def Plot_Trajectory_Other_molecule_BS_method():
     Initial_action = [1 ,1 ,1 ,0 ,0 ,1 ,0 ,0]
     # Initial_action = [2,2,2,3,2,2,2,2]
     Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-
+    Initial_angle = [5.50931976, 0.46196768, 6.060698 ,  1.1348094 , 5.28584671 ,4.77783969,
+ 5.87302753 ,1.49436109]
     f0 = 500
 
-    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100(2ps)/"
+    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100/"
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 1
+    final_time = 0.5
 
     Time_step = np.linspace(0, final_time, 300)
 
@@ -81,6 +82,9 @@ def Plot_Trajectory_Other_molecule_BS_method():
     dev_t_list = []
     time = 0
     for i in range(Iter_number):
+        if(i!=0):
+            Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+            Initial_position = Initial_action + Initial_angle
         time, sol, _  = Evolve_dynamics_Other_Molecule_BS_method(Initial_position,Time_step, V0, scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans)
         # Define quantity which is deviation of action
         Len = len(time)
@@ -101,7 +105,7 @@ def Plot_Trajectory_Other_molecule_BS_method():
 
     ax2.legend(loc='best')
     ax2.set_xlabel('t/T')
-    ax2.set_yscale('log')
+    # ax2.set_yscale('log')
     ax2.set_title('BS method')
 
     dev_t_mean = np.mean(dev_t_list, 0)

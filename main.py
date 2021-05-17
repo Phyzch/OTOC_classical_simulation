@@ -5,6 +5,7 @@ from Analyze_Sensitivity_Other_Molecules import SCCL2_Analyze_Sensitivity_number
     Sample_SCCL2_Realistic_Hamiltonian_angular_velocity, Sample_SCCL2_scaling_angular_velocity , Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian
 
 from Evolve_dynamics_Using_Bulirsch import Plot_Trajectory_Other_molecule_BS_method
+from Read_plot_OTOC_from_file import Plot_all_Eigenvalue_for_diff_traj_from_file
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -48,5 +49,10 @@ def main():
     # Sample_SCCL2_Realistic_Hamiltonian_angular_velocity()
 
     # Sample_SCCL2_scaling_angular_velocity()
+
+
+    # Plot result
+    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100/"
+    # Plot_all_Eigenvalue_for_diff_traj_from_file(folder_path)
 
 main()

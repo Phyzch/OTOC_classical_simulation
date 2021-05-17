@@ -143,13 +143,13 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 1
+    final_time = 0.5
 
     Time_step_len = 1000
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 100
+    Iterate_number = 1
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
@@ -164,10 +164,13 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list_trans = np.transpose(nquanta_list)
 
-
-    for iter_index in range(Iteration_number_per_core):
+    iter_index = -1
+    while(iter_index < Iteration_number_per_core):
+        iter_index = iter_index + 1
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-        # Initial_angle = [4.87371406040547, 6.20316183022866, 4.093689463478892, 3.8541398433268963, 0.23028078649982597, 0.8565145819947704, 5.365277076121005, 2.9484079410970825]
+        Initial_angle = [5.50931976, 0.46196768, 6.060698 ,  1.1348094 , 5.28584671, 4.77783969,
+            5.87302753 ,1.49436109]
+        print("rank = " + str(rank) + " angle =  " + str(Initial_angle))
 
         random_angle_list.append(Initial_angle)
        # print('initial action')
@@ -181,6 +184,17 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         _, sol, finish_simulation = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, scaling_parameter,
                                                              frequency, f0, nquanta_list, nquanta_list_trans)
 
+        # check if we have J = 0 in simulation
+        Zero_bool = False
+        for i in range(Time_step_len):
+            for j in range(dof):
+                if(sol[i][j] == 0):
+                    Zero_bool = True
+        if Zero_bool == True :
+            # redo simulation with different angle.
+            iter_index = iter_index - 1
+            continue
+
         if(finish_simulation == False):
             print("Simulation failed with angle:  " + str(Initial_angle) +" and iter index :  " + str(iter_index) +"  for original dynamics" )
         sol_len = len(sol)
@@ -192,6 +206,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
+
 
         for i in range(dof):
             action_change = np.zeros(dof)
@@ -218,7 +233,20 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                 one_array = one_array * sol1_final
                 sol1 = np.concatenate((sol1, one_array), axis=0)
 
+            # check if J == 0
+            for i in range(Time_step_len):
+                for j in range(dof):
+                    if (sol1[i][j] == 0):
+                        Zero_bool = True
+            if Zero_bool == True:
+                break
+
             Sol_change_list.append(sol1)
+
+        if Zero_bool == True :
+            # redo simulation with different angle.
+            iter_index = iter_index - 1
+            continue
 
         phase_jitter = 0.001
         for i in range(dof):
@@ -246,10 +274,22 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                 one_array = one_array * sol1_final
                 sol1 = np.concatenate((sol1, one_array), axis=0)
 
+            # check if J == 0
+            for i in range(Time_step_len):
+                for j in range(dof):
+                    if (sol1[i][j] == 0):
+                        Zero_bool = True
+            if Zero_bool == True:
+                break
+
             Sol_change_list.append(sol1)
 
-        # we first compute \partial Q_{i} / \partial J_{j} or \partial Q_{i} / \partial theta_{j}
+        if Zero_bool == True :
+            # redo simulation with different angle.
+            iter_index = iter_index - 1
+            continue
 
+        # we first compute \partial Q_{i} / \partial J_{j} or \partial Q_{i} / \partial theta_{j}
         # for original dynamics
         XP_matrix = []
         for i in range(2*dof):
@@ -388,7 +428,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         random_angle_list = np.reshape(recv_angle_list,
                                        (recv_angle_list_shape[0] * recv_angle_list_shape[1] , recv_angle_list_shape[2])
                                        )
-
+        print("random angle received:  " + str(random_angle_list))
         # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
         # min_nonzero_len = 100000
         # for i in range(Iterate_number):
@@ -481,7 +521,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         # Average_Lyapunov exponent
         Lyapunov_exponent_all = []
-        for i in Iterate_number:
+        for i in range(Iterate_number):
             Lyapunov_exponent_single_trajectory = []
             for j in range(2 * dof):
                 Lyapunov_exponent = np.log( Eigenvalue_List_in_all_simulation[i][j][1:] ) / (2 * np.array(Time_step[1:]) )
@@ -505,6 +545,19 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
             f.write("\n")
 
         f.close()
+
+        file_path_all_state = os.path.join(folder_path, "All_trajectory_eigenvalue.txt")
+        f = open(file_path_all_state, "w")
+        f.write(str(Iterate_number) + "\n")
+        for i in range(Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+        for i in range(Iterate_number):
+            for j in range(Data_len):
+                f.write(  str(Eigenvalue_List_in_all_simulation[i][0][j]) + " " )
+            f.write("\n")
+        f.close()
+
 
         file_path1 = os.path.join(folder_path, "Largest_Eigenvalue_for_chaotic_regime.txt")
         f = open(file_path1, "w")
@@ -540,8 +593,8 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                 f.write(str(Average_Lyapunov_exponent[i][j]) + " " )
             f.write("\n")
         f.close()
-        # plt.show()
 
+        print("down analysis")
 
 def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     matplotlib.rcParams.update({'font.size': 14})
