@@ -5,7 +5,7 @@ from Evolve_dynamics import Evolve_dynamics_Other_Molecules , Evolve_dynamics_SC
 from SCCL2_potential import Generate_n_quanta_list_for_SCCL2, Other_molecule_angle_velocity, Other_molecule_action_velocity, SCCL2_Realistic_Hamiltonian_action_velocity, SCCL2_Realistic_Hamiltonian_angle_velocity
 from SCCL2_potential import Read_Realistic_SCCL2
 from Evolve_back_in_time import Evolve_dynamics_SCCL2_Realistic_Hamiltonian_back_in_time
-from Evolve_dynamics_Using_Bulirsch import Evolve_dynamics_Other_Molecule_BS_method
+from Evolve_dynamics_Using_Bulirsch import Evolve_dynamics_Other_Molecule_BS_method , Evolve_dynamics_Realistic_SCCL2_BS_method
 import os
 
 from mpi4py import MPI
@@ -133,7 +133,7 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
     # Initial_action = [2, 2, 2, 3, 2, 2, 2, 2,2]
     # Initial_angle_for_largest_eigenvalue = np.zeros([dof]).tolist()
 
-    # Cyclopentaone
+    # Cyclopentanone
     frequency = [2210 , 2222 , 2966 , 2945 , 2130 , 2126 , 2880 , 2880]
     dof = 8
     Initial_action = [1 ,1 ,1 ,0 ,0 ,1 ,0 ,0]
@@ -143,13 +143,13 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 2
+    final_time = 1
 
-    Time_step_len = 4000
+    Time_step_len = 1000
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 10
+    Iterate_number = 100
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
@@ -185,8 +185,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
             print("Simulation failed with angle:  " + str(Initial_angle) +" and iter index :  " + str(iter_index) +"  for original dynamics" )
         sol_len = len(sol)
         if(sol_len < Time_step_len):
-            zero_array = np.zeros( (Time_step_len - sol_len , 2 * dof) )
-            sol = np.concatenate((sol, zero_array), axis = 0 )
+            one_array = np.ones( (Time_step_len - sol_len , 2 * dof) )
+            sol_final = sol[-1,:]
+            one_array = one_array * sol_final
+            sol = np.concatenate((sol, one_array), axis = 0 )
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
@@ -211,8 +213,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             sol_len = len(sol1)
             if (sol_len < Time_step_len):
-                zero_array = np.zeros((Time_step_len - sol_len, 2 * dof))
-                sol1 = np.concatenate((sol1, zero_array), axis=0)
+                one_array = np.ones((Time_step_len - sol_len, 2 * dof))
+                sol1_final = sol1[-1,:]
+                one_array = one_array * sol1_final
+                sol1 = np.concatenate((sol1, one_array), axis=0)
 
             Sol_change_list.append(sol1)
 
@@ -237,8 +241,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
             sol_len = len(sol1)
             if (sol_len < Time_step_len):
-                zero_array = np.zeros((Time_step_len - sol_len, 2 * dof))
-                sol1 = np.concatenate((sol1, zero_array), axis=0)
+                one_array = np.ones((Time_step_len - sol_len, 2 * dof))
+                sol1_final = sol1[-1,:]
+                one_array = one_array * sol1_final
+                sol1 = np.concatenate((sol1, one_array), axis=0)
 
             Sol_change_list.append(sol1)
 
@@ -384,16 +390,16 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                                        )
 
         # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
-        min_nonzero_len = 100000
-        for i in range(Iterate_number):
-            nonzero_len = len ( [ i for i in  Eigenvalue_List_in_all_simulation[i][0] if i!=0 ])
-            if(min_nonzero_len > nonzero_len):
-                min_nonzero_len = nonzero_len
-
-        Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:,:,:min_nonzero_len]
-        Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, : ,:min_nonzero_len ]
-
-        Time_step = Time_step [:min_nonzero_len]
+        # min_nonzero_len = 100000
+        # for i in range(Iterate_number):
+        #     nonzero_len = len ( [ i for i in  Eigenvalue_List_in_all_simulation[i][0] if i!=0 ])
+        #     if(min_nonzero_len > nonzero_len):
+        #         min_nonzero_len = nonzero_len
+        #
+        # Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:,:,:min_nonzero_len]
+        # Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, : ,:min_nonzero_len ]
+        #
+        # Time_step = Time_step [:min_nonzero_len]
 
         # -----------------------------------------------------------
 
@@ -441,13 +447,13 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         Lyapunov_exponent_list = []
         for i in range(2 * dof):
-            Lyapunov_exponent = np.log(Eigen_value_list[i]) / (2 * np.array(Time_step))
+            Lyapunov_exponent = np.log(Eigen_value_list[i][1:]) / (2 * np.array(Time_step[1:]))
             Lyapunov_exponent_list.append(Lyapunov_exponent)
 
         # plot Lyapunov exponent
         fig2, ax2 = plt.subplots(nrows=1,ncols=1)
         for i in range(2* dof):
-            ax2.plot( np.array(Time_step)/Period, Lyapunov_exponent_list[i] , label = 'Lyapunov exponent mode ' + str(i+1))
+            ax2.plot( np.array(Time_step[1:])/Period, Lyapunov_exponent_list[i] , label = 'Lyapunov exponent mode ' + str(i+1))
 
         # ax2.legend(loc = 'best')
         ax2.set_xlabel('t/T')
@@ -472,6 +478,17 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         # ax3.legend(loc = 'best')
         ax3.set_yscale('log')
+
+        # Average_Lyapunov exponent
+        Lyapunov_exponent_all = []
+        for i in Iterate_number:
+            Lyapunov_exponent_single_trajectory = []
+            for j in range(2 * dof):
+                Lyapunov_exponent = np.log( Eigenvalue_List_in_all_simulation[i][j][1:] ) / (2 * np.array(Time_step[1:]) )
+                Lyapunov_exponent_single_trajectory.append(Lyapunov_exponent)
+            Lyapunov_exponent_all.append(Lyapunov_exponent_single_trajectory)
+
+        Average_Lyapunov_exponent = np.mean(Lyapunov_exponent_all, 0)
 
         # save the result
         file_path = os.path.join(folder_path, "Average_Eigenvalue_for_chaotic_regime.txt")
@@ -504,7 +521,26 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         f.close()
 
-        plt.show()
+        file_path2 = os.path.join(folder_path, "Largest_angle.txt")
+        f = open(file_path2, "w")
+        f.write('angle for largest Lyapunov exponent')
+        f.write('\n')
+        f.write(str(Initial_angle_for_largest_eigenvalue))
+        f.close()
+
+        file_path3 = os.path.join(folder_path, 'Average_over_Lyapunov_exponent.txt')
+        f=open(file_path3,"w")
+        f.write(str(dof) + "\n")
+        Data_len = len(Time_step)
+        for i in range(1, Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+        for i in range(dof * 2):
+            for j in range(Data_len - 1):
+                f.write(str(Average_Lyapunov_exponent[i][j]) + " " )
+            f.write("\n")
+        f.close()
+        # plt.show()
 
 
 def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
@@ -514,15 +550,15 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     Coefficient = np.array(Coefficient) * 1
 
     dof = 6
-    final_time = 0.05
+    final_time = 0.04
 
     Period = 0.03
 
-    Time_step_len = 10
+    Time_step_len = 1000
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 1
+    Iterate_number = 20
 
     # Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
 
@@ -532,9 +568,10 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     Singularvalue_List_in_all_simulation = []
     Largest_Lypunov_exponent_in_all_simulation = 0
 
-    Initial_angle = [31.94, 6.098, 8.846, 16.529, 20.217,
-                     14.1]
+    # Initial_angle = [31.94, 6.098, 8.846, 16.529, 20.217,
+    #                  14.1]
 
+    Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
     Initial_angle_for_largest_eigenvalue = []
     Largest_Eigenvalue_List= []
     Largest_Singularvalue_List = []
@@ -546,7 +583,6 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     for l in range(Iteration_number_per_core):
 
         if(l != 0 ):
-            # Initial_angle_new = [ ((np.random.random() -0.5) * 2 * 0.1 + 1) * angle for angle in Initial_angle ]
             Initial_angle_new = [ 2 * np.pi * np.random.random() for i in range(dof) ]
             Initial_angle = Initial_angle_new
 
@@ -554,7 +590,16 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
         Initial_position = Initial_action + Initial_angle
 
-        sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+        # sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+        _, sol, finish_simulation = Evolve_dynamics_Realistic_SCCL2_BS_method(Initial_position,Time_step, frequency, Coefficient,
+                                                                              nquanta_list)
+
+        if(finish_simulation == False):
+            print("Simulation failed with angle:  " + str(Initial_angle) +" and iter index :  " + str(l) +"  for original dynamics" )
+        sol_len = len(sol)
+        if(sol_len < Time_step_len):
+            zero_array = np.zeros( (Time_step_len - sol_len , 2 * dof) )
+            sol = np.concatenate((sol, zero_array), axis = 0 )
 
         Sol_change_list = []  # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
@@ -568,7 +613,20 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
             Initial_position = Initial_action1 + Initial_angle
 
-            sol1 = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+            # sol1 = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+            _, sol1, finish_simulation = Evolve_dynamics_Realistic_SCCL2_BS_method(Initial_position, Time_step,
+                                                                                  frequency, Coefficient,
+                                                                                  nquanta_list)
+
+            if (finish_simulation == False):
+                print("Simulation failed with angle:  " + str(Initial_angle) + " and iter index :  " + str(
+                    l) + "  for action perturbation for mode  " + str(i))
+
+            sol1_len = len(sol1)
+            if (sol1_len < Time_step_len):
+                zero_array = np.zeros((Time_step_len - sol1_len, 2 * dof))
+                sol1 = np.concatenate((sol1, zero_array), axis=0)
+
             Sol_change_list.append(sol1)
 
         phase_jitter = 0.001
@@ -581,7 +639,19 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
             Initial_position = Initial_action + Initial_angle1
 
-            sol1 =  Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+            # sol1 =  Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
+            _, sol1, finish_simulation = Evolve_dynamics_Realistic_SCCL2_BS_method(Initial_position, Time_step,
+                                                                                   frequency, Coefficient,
+                                                                                   nquanta_list)
+
+            if (finish_simulation == False):
+                print("Simulation failed with angle:  " + str(Initial_angle) + " and iter index :  " + str(
+                    l) + "  for angle perturbation for mode  " + str(i))
+
+            sol1_len = len(sol1)
+            if (sol1_len < Time_step_len):
+                zero_array = np.zeros((Time_step_len - sol1_len, 2 * dof))
+                sol1 = np.concatenate((sol1, zero_array), axis=0)
 
             Sol_change_list.append(sol1)
 
@@ -592,13 +662,17 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         for i in range(2 * dof):
             XP_matrix.append([])
 
+        Time_step_len = len(Time_step)
         for t in range(Time_step_len):
             for i in range(dof):
                 J = sol[t][i]
                 phi = sol[t][i + dof]
-
-                Q = np.sqrt(2 * J) * np.cos(phi)
-                P = np.sqrt(2 * J) * np.sin(phi)
+                if (J >= 0):
+                    Q = np.sqrt(2 * J) * np.cos(phi)
+                    P = np.sqrt(2 * J) * np.sin(phi)
+                else:
+                    Q = 0
+                    P = 0
 
                 XP_matrix[i].append(Q)
                 XP_matrix[i + dof].append(P)
@@ -617,8 +691,12 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
                     J = Sol_after_change[t][j]
                     phi = Sol_after_change[t][j + dof]
 
-                    Q = np.sqrt(2 * J) * np.cos(phi)
-                    P = np.sqrt(2 * J) * np.sin(phi)
+                    if (J >= 0):
+                        Q = np.sqrt(2 * J) * np.cos(phi)
+                        P = np.sqrt(2 * J) * np.sin(phi)
+                    else:
+                        Q = 0
+                        P = 0
 
                     XP_matrix_new[j].append(Q)
                     XP_matrix_new[j + dof].append(P)
@@ -637,18 +715,21 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
             for i in range(2 * dof):
                 for j in range(dof):
-                    # {Q_{i}(t) ,Q_{j}}
-                    Stability_Matrix[i][j] = (
-                                Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(2 * Initial_action[j]) * np.sin(
-                            Initial_angle[j]) +
-                                Diff_XP_matrix_list[j + dof][i][t] / phase_jitter * np.cos(Initial_angle[j]) / np.sqrt(
-                            2 * Initial_action[j]))  # {, Q_{j} }
-                    # {Q_{i}(t) , P_{j}}
-                    Stability_Matrix[i][j + dof] = (
-                                Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(2 * Initial_action[j]) * np.cos(
-                            Initial_angle[j]) -
-                                Diff_XP_matrix_list[j + dof][i][t] / phase_jitter * np.sin(Initial_angle[j]) / np.sqrt(
-                            2 * Initial_action[j]))  # { , P_{j}}
+                    if (Initial_action[j] != 0):
+                        # {Q_{i}(t) ,Q_{j}}
+                        Stability_Matrix[i][j] = (Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(
+                            2 * Initial_action[j]) * np.sin(Initial_angle[j]) +
+                                                  Diff_XP_matrix_list[j + dof][i][t] / phase_jitter * np.cos(
+                                    Initial_angle[j]) / np.sqrt(2 * Initial_action[j]))  # {, Q_{j} }
+                        # {Q_{i}(t) , P_{j}}
+                        Stability_Matrix[i][j + dof] = (Diff_XP_matrix_list[j][i][t] / action_jitter * np.sqrt(
+                            2 * Initial_action[j]) * np.cos(Initial_angle[j]) -
+                                                        Diff_XP_matrix_list[j + dof][i][t] / phase_jitter * np.sin(
+                                    Initial_angle[j]) / np.sqrt(2 * Initial_action[j]))  # { , P_{j}}
+
+                    else:
+                        Stability_Matrix[i][j] = 0
+                        Stability_Matrix[i][j + dof] = 0
 
             Stability_Matrix_list.append(Stability_Matrix)
 
@@ -657,6 +738,11 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         for t in range(Time_step_len):
             u, s, vh = np.linalg.svd(Stability_Matrix_list[t])
             s = -np.sort(-s)
+            # do an upper cutoff as pow(10,6)
+            for j in range(2 * dof):
+                if s[j] > pow(10, 6):
+                    s[j] = pow(10, 6)
+
             Singular_value_list.append(s)
             eigenvalue = np.power(s, 2)
             Eigen_value_list.append(eigenvalue)
@@ -665,10 +751,10 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         Singular_value_list = np.transpose(Singular_value_list)
         Eigen_value_list = np.transpose(Eigen_value_list)
 
+        Largest_Lyapunov_exponent = np.log(Eigen_value_list[0][-1]) / (2 * Time_step[-1])
+
         Eigenvalue_List_in_all_simulation.append(Eigen_value_list)
         Singularvalue_List_in_all_simulation.append(Singular_value_list)
-
-
 
     # combine results in different process together:
     Eigenvalue_List_in_all_simulation = np.real(Eigenvalue_List_in_all_simulation)
@@ -710,6 +796,20 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         random_angle_list = np.reshape(recv_angle_list,
                                        (recv_angle_list_shape[0] * recv_angle_list_shape[1] , recv_angle_list_shape[2])
                                        )
+
+        # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
+        min_nonzero_len = 100000
+        for i in range(Iterate_number):
+            nonzero_len = len ( [ i for i in  Eigenvalue_List_in_all_simulation[i][0] if i!=0 ])
+            if(min_nonzero_len > nonzero_len):
+                min_nonzero_len = nonzero_len
+
+        Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:,:,:min_nonzero_len]
+        Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, : ,:min_nonzero_len ]
+
+        Time_step = Time_step [:min_nonzero_len]
+
+        # -----------------------------------------------------------
 
         # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
         index_for_largest_lypunov = 0
@@ -804,6 +904,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
         f.close()
 
+    plt.show()
 
 
 def Plot_Trajectory_Other_Molecules():
