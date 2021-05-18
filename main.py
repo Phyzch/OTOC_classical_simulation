@@ -23,15 +23,15 @@ def main():
     # Analyze_Stability_Matrix_change_action()
 
     # Analyze xp sensitivity for SWW model
-    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7/"
-    # Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
+    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7_average_100_state/"
+    Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
 
     # Analyze number operator sensitivity for SCCL2
     # SCCL2_Analyze_Sensitivity_number_operator()
 
     # SCCL2 scaling Hamiltonian xp stability matrix
     folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100(try)/"
-    Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path_SCCL2_scaling_Other_Molecule)
+    # Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path_SCCL2_scaling_Other_Molecule)
 
 
     # plot OTOC for  SCCL2 Strickler Gruebele Hamiltonian

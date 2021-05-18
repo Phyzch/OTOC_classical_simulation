@@ -579,6 +579,11 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         f.write('angle for largest Lyapunov exponent')
         f.write('\n')
         f.write(str(Initial_angle_for_largest_eigenvalue))
+        f.write('\n')
+        f.write('all angle: ')
+        for i in range(Iterate_number):
+            f.write(str(random_angle_list[i]))
+            f.write('\n')
         f.close()
 
         file_path3 = os.path.join(folder_path, 'Average_over_Lyapunov_exponent.txt')

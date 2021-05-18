@@ -337,7 +337,9 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     final_time = 0.6
 
-    Time_step = np.linspace(0, final_time, 500)
+    step_number = 100
+
+    Time_step = np.linspace(0, final_time, step_number)
 
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
