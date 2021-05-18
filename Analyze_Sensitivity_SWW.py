@@ -5,8 +5,12 @@ from Potential import compute_angle_velocity, compute_action_velocity
 from Potential import prepare_Tuple_list
 import matplotlib.pyplot as plt
 from Evolve_dynamics import Evolve_dynamics
+from Evolve_dynamics_Using_Bulirsch import Evolve_dynamics_SWW_BS_method
 import matplotlib
-
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+num_proc = comm.Get_size()
 
 cf = 2 * np.pi * 0.0299792458  # conversion from cm^{-1} to ps^{-1}
 
@@ -337,14 +341,14 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     final_time = 0.6
 
-    step_number = 100
+    Time_step_len = 500
 
-    Time_step = np.linspace(0, final_time, step_number)
+    Time_step = np.linspace(0, final_time, Time_step_len)
 
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 20
+    Iterate_number = 100
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
@@ -358,25 +362,28 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     Singularvalue_List_in_all_simulation = []
 
     Initial_action_list = []
-    Initial_angle_list = []
+    random_angle_list = []
     Max_quanta_number = 6
-    for _ in range(Iterate_number):
+
+    Iteration_number_per_core = int(Iterate_number / num_proc)
+    Iterate_number = Iteration_number_per_core * num_proc
+
+    for iter_index in range(Iteration_number_per_core):
 
         # random sample Initial action in microcanonical ensemble
-        energy = 0
-
-        Initial_action = []
-        while( any( [(abs(energy - Initial_energy) > Initial_energy / 20) , (Initial_action in Initial_action_list)] )  ):
-            # this is just or
-            Initial_action = np.array([ int( 1 + np.random.random() * (Max_quanta_number-1) ) for i in range(dof) ])
-            energy = np.sum(frequency * Initial_action)
-            Initial_action = Initial_action.tolist()
-
-        Initial_action_list.append(Initial_action)
+        # energy = 0
+        #
+        # Initial_action = []
+        # while( any( [(abs(energy - Initial_energy) > Initial_energy / 20) , (Initial_action in Initial_action_list)] )  ):
+        #     Initial_action = np.array([ int( 1 + np.random.random() * (Max_quanta_number-1) ) for i in range(dof) ])
+        #     energy = np.sum(frequency * Initial_action)
+        #     Initial_action = Initial_action.tolist()
+        #
+        # Initial_action_list.append(Initial_action)
 
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
         # Initial_angle = [5.482704485103094, 0.11406030522578368, 3.7368792709211793, 5.7732171653849225, 6.198046444388037, 2.9107388232894045]
-        Initial_angle_list.append(Initial_angle)
+        random_angle_list.append(Initial_angle)
 
         # print('initial action')
         # print(Initial_action)
@@ -385,8 +392,8 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
         Initial_position = Initial_action + Initial_angle
 
-        sol = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
-
+        #sol = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+        _, sol, finish_simulation = Evolve_dynamics_SWW_BS_method(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
         action_jitter = 0.001
@@ -400,7 +407,8 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
             Initial_position = Initial_action1 + Initial_angle
 
-            sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+            # sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+            _, sol1, finish_simulation = Evolve_dynamics_SWW_BS_method(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
 
             Sol_change_list.append(sol1)
 
@@ -414,7 +422,8 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
             Initial_position = Initial_action + Initial_angle1
 
-            sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+            # sol1 = Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
+            _, sol1, finish_simulation = Evolve_dynamics_SWW_BS_method(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
 
             Sol_change_list.append(sol1)
 
@@ -504,95 +513,240 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
             Largest_Eigenvalue_List = Eigen_value_list
             Largest_Singularvalue_List = Singular_value_list
 
+    # combine results in different process together:
+    Eigenvalue_List_in_all_simulation = np.real(Eigenvalue_List_in_all_simulation)
+    Singularvalue_List_in_all_simulation = np.real(Singularvalue_List_in_all_simulation)
+    random_angle_list = np.real(random_angle_list)
 
-    Singular_value_list = Largest_Singularvalue_List
-    Eigen_value_list = Largest_Eigenvalue_List
+    # size: [num_proc, iteration_number_per_core, 2*dof, Time_step_len]
+    recv_Eigenvalue_list_in_all_simulation = []
+    recv_Singular_value_List_in_all_simulation = []
+    if (rank == 0):
+        recv_Eigenvalue_list_in_all_simulation = np.empty(
+            [num_proc, Iteration_number_per_core, 2 * dof, Time_step_len], dtype=np.float64)
+        recv_Singular_value_List_in_all_simulation = np.empty(
+            [num_proc, Iteration_number_per_core, 2 * dof, Time_step_len], dtype=np.float64)
 
-    print('initial action')
-    print(Initial_action)
-    print('initial angle:')
-    Initial_angle = Initial_angle_for_largest_eigenvalue
-    print(Initial_angle)
+    comm.Gather(Eigenvalue_List_in_all_simulation, recv_Eigenvalue_list_in_all_simulation, 0)
+    comm.Gather(Singularvalue_List_in_all_simulation, recv_Singular_value_List_in_all_simulation, 0)
 
-    # plot result
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    for i in range( 2*dof):
-        ax.plot(np.array(Time_step) / Period, Eigen_value_list[i], label='Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+    # angle_list : size : [num_proc, iteration_number_per_core, dof]
+    recv_angle_list = []
+    if (rank == 0):
+        recv_angle_list = np.empty([num_proc, Iteration_number_per_core, dof], dtype=np.float64)
 
-    ax.legend(loc='best')
-    ax.set_xlabel('t/T')
+    comm.Gather(random_angle_list, recv_angle_list, 0)
 
-    # ax.set_xscale('log')
-    ax.set_yscale('log')
+    if(rank == 0):
 
-    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
-    for i in range(2 * dof):
-        ax1.plot(np.array(Time_step)/Period, Singular_value_list[i],label = 'Singular value '+ str(i+1) + ' for M' )
-    ax1.legend(loc = 'best')
-    ax1.set_xlabel('t/T')
+        # convert recved data to original format
+        # Now shape [iterate_number , 2 * dof,  Time_step_len ]
+        recv_Eigenvalue_list_shape = recv_Eigenvalue_list_in_all_simulation.shape
+        Eigenvalue_List_in_all_simulation = np.reshape(recv_Eigenvalue_list_in_all_simulation,
+                                                       (recv_Eigenvalue_list_shape[0] * recv_Eigenvalue_list_shape[1],
+                                                        recv_Eigenvalue_list_shape[2], recv_Eigenvalue_list_shape[3]))
 
-    # ax1.set_xscale('log')
-    ax1.set_yscale('log')
+        recv_Singular_value_shape = recv_Singular_value_List_in_all_simulation.shape
+        Singularvalue_List_in_all_simulation = np.reshape(recv_Singular_value_List_in_all_simulation,
+                                                          (recv_Singular_value_shape[0] * recv_Eigenvalue_list_shape[1],
+                                                           recv_Singular_value_shape[2], recv_Eigenvalue_list_shape[3])
+                                                          )
+        # Now shape : [Iterate_number , dof ]
+        recv_angle_list_shape = recv_angle_list.shape
+        random_angle_list = np.reshape(recv_angle_list,
+                                       (recv_angle_list_shape[0] * recv_angle_list_shape[1], recv_angle_list_shape[2])
+                                       )
 
-    Lyapunov_exponent_list = []
-    for i in range(2 * dof):
-        Lyapunov_exponent = np.log(Eigen_value_list[i]) / (2 * np.array(Time_step))
-        Lyapunov_exponent_list.append(Lyapunov_exponent)
+        print("random angle received:  " + str(random_angle_list))
 
-    # plot Lyapunov exponent
-    fig2, ax2 = plt.subplots(nrows=1,ncols=1)
-    for i in range(2* dof):
-        ax2.plot( np.array(Time_step)/Period, Lyapunov_exponent_list[i] , label = 'Lyapunov exponent mode ' + str(i+1))
+        # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
+        Largest_Lypunov_exponent_in_all_simulation = 0
+        for i in range(Iterate_number):
+            Largest_Lyapunov_exponent = np.log(Eigenvalue_List_in_all_simulation[i][0][-1]) / (2 * Time_step[-1])
+            if (Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
+                Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
+                Initial_angle_for_largest_eigenvalue = random_angle_list[i]
+                Largest_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
+                Largest_Singularvalue_List = Singularvalue_List_in_all_simulation[i]
 
-    # ax2.legend(loc = 'best')
-    ax2.set_xlabel('t/T')
-    ax2.set_title('Lyapunov exponent')
+        Singular_value_list = Largest_Singularvalue_List
+        Eigen_value_list = Largest_Eigenvalue_List
 
-    # plot average result over angle in torus
-    fig3, ax3 = plt.subplots(nrows=1,ncols=1)
+        print('initial action')
+        print(Initial_action)
+        print('initial angle:')
+        Initial_angle = Initial_angle_for_largest_eigenvalue
+        print(Initial_angle)
 
-    Average_Eigenvalue_list = np.mean(Eigenvalue_List_in_all_simulation,0)
-    Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation,0)
+        # plot result
+        fig, ax = plt.subplots(nrows=1, ncols=1)
+        # for i in range( 2*dof):
+        #     ax.plot(np.array(Time_step) / Period, Eigen_value_list[i], label='Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+        ax.plot(np.array(Time_step) / Period, Eigen_value_list[0], label=' Largest Eigenvalue  for $M^{2}$ ')
 
-    for i in range( 2*dof):
-        ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+        ax.legend(loc='best')
+        ax.set_xlabel('t/T')
 
-    ax3.set_xlabel('t/T')
-    ax3.set_ylabel('Average Eigenvalue')
+        # ax.set_xscale('log')
+        ax.set_yscale('log')
 
-    ax3.set_title('Average Eigenvalue')
+        fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+        for i in range(2 * dof):
+            ax1.plot(np.array(Time_step) / Period, Singular_value_list[i],
+                     label='Singular value ' + str(i + 1) + ' for M')
+        ax1.plot(np.array(Time_step) / Period, Singular_value_list[0], label='Largest Singular value for M')
 
-    # ax3.legend(loc = 'best')
-    ax3.set_yscale('log')
+        ax1.legend(loc='best')
+        ax1.set_xlabel('t/T')
 
-    # save data:
-    # file_path = os.path.join(folder_path,"Microcanonical Average Eigenvalue.txt")
-    # f = open(file_path,"w")
-    # f.write(str(dof) + "\n")
-    # Data_len = len(Time_step)
-    # for i in range(Data_len):
-    #     f.write(str(Time_step[i] / Period) + " ")
-    # f.write("\n")
-    #
-    # for i in range(dof * 2):
-    #     for j in range(Data_len):
-    #         f.write(str(Average_Eigenvalue_list[i][j]) + " ")
-    #     f.write("\n")
-    #
-    # f.close()
-    #
-    # log_path = os.path.join(folder_path,"Micaocanonical Average action angle.txt")
-    # f1 = open(log_path,"w")
-    # f1.write(str(Iterate_number) + "\n")
-    # for i in range(Iterate_number):
-    #     for j in range(dof):
-    #         f1.write(str(Initial_action_list[i][j]) + " ")
-    #     f1.write("\n")
-    #     for j in range(dof):
-    #         f1.write(str(Initial_angle_list[i][j]) + " ")
-    #     f1.write("\n")
-    #
-    # f1.close()
+        # ax1.set_xscale('log')
+        ax1.set_yscale('log')
+
+        Lyapunov_exponent_list = []
+        for i in range(2 * dof):
+            Lyapunov_exponent = np.log(Eigen_value_list[i][1:]) / (2 * np.array(Time_step[1:]))
+            Lyapunov_exponent_list.append(Lyapunov_exponent)
+
+        # plot Lyapunov exponent
+        fig2, ax2 = plt.subplots(nrows=1, ncols=1)
+        for i in range(2 * dof):
+            ax2.plot(np.array(Time_step[1:]) / Period, Lyapunov_exponent_list[i],
+                     label='Lyapunov exponent mode ' + str(i + 1))
+
+        # ax2.legend(loc = 'best')
+        ax2.set_xlabel('t/T')
+        ax2.set_title('Lyapunov exponent')
+
+        # plot average result over angle in torus
+        fig3, ax3 = plt.subplots(nrows=1, ncols=1)
+
+        Average_Eigenvalue_list = np.mean(Eigenvalue_List_in_all_simulation, 0)
+        Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation, 0)
+
+        # for i in range( 2*dof):
+        #     ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+
+        ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[0],
+                 label='Largest Average Eigenvalue  for $M^{2}$ ')
+
+        ax3.set_xlabel('t/T')
+        ax3.set_ylabel('Average Eigenvalue')
+
+        ax3.set_title('Average Eigenvalue')
+
+        # ax3.legend(loc = 'best')
+        ax3.set_yscale('log')
+
+        # Average_Lyapunov exponent
+        Lyapunov_exponent_all = []
+        for i in range(Iterate_number):
+            Lyapunov_exponent_single_trajectory = []
+            for j in range(2 * dof):
+                Lyapunov_exponent = np.log(Eigenvalue_List_in_all_simulation[i][j][1:]) / (2 * np.array(Time_step[1:]))
+                Lyapunov_exponent_single_trajectory.append(Lyapunov_exponent)
+            Lyapunov_exponent_all.append(Lyapunov_exponent_single_trajectory)
+
+        Average_Lyapunov_exponent = np.mean(Lyapunov_exponent_all, 0)
+
+        # save the result
+        file_path = os.path.join(folder_path, "Average_Eigenvalue.txt")
+        f = open(file_path, "w")
+        f.write(str(dof) + "\n")
+        Data_len = len(Time_step)
+        for i in range(Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+
+        for i in range(dof * 2):
+            for j in range(Data_len):
+                f.write(str(Average_Eigenvalue_list[i][j]) + " ")
+            f.write("\n")
+
+        f.close()
+
+        file_path_all_state = os.path.join(folder_path, "All_trajectory_eigenvalue.txt")
+        f = open(file_path_all_state, "w")
+        f.write(str(Iterate_number) + "\n")
+        for i in range(Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+        for i in range(Iterate_number):
+            for j in range(Data_len):
+                f.write(str(Eigenvalue_List_in_all_simulation[i][0][j]) + " ")
+            f.write("\n")
+        f.close()
+
+        file_path1 = os.path.join(folder_path, "Largest_Eigenvalue_for_chaotic_regime.txt")
+        f = open(file_path1, "w")
+        f.write(str(dof) + "\n")
+        Data_len = len(Time_step)
+        for i in range(Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+
+        for i in range(dof * 2):
+            for j in range(Data_len):
+                f.write(str(Largest_Eigenvalue_List[i][j]) + " ")
+            f.write("\n")
+
+        f.close()
+
+        file_path2 = os.path.join(folder_path, "Largest_angle.txt")
+        f = open(file_path2, "w")
+        f.write('angle for largest Lyapunov exponent')
+        f.write('\n')
+        f.write(str(Initial_angle_for_largest_eigenvalue))
+        f.write('\n')
+        f.write('all angle: ')
+        for i in range(Iterate_number):
+            f.write(str(random_angle_list[i]))
+            f.write('\n')
+        f.close()
+
+        file_path3 = os.path.join(folder_path, 'Average_over_Lyapunov_exponent.txt')
+        f = open(file_path3, "w")
+        f.write(str(dof) + "\n")
+        Data_len = len(Time_step)
+        for i in range(1, Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+        for i in range(dof * 2):
+            for j in range(Data_len - 1):
+                f.write(str(Average_Lyapunov_exponent[i][j]) + " ")
+            f.write("\n")
+        f.close()
 
 
-    plt.show()
+
+
+        # save data:
+        # file_path = os.path.join(folder_path,"Microcanonical Average Eigenvalue.txt")
+        # f = open(file_path,"w")
+        # f.write(str(dof) + "\n")
+        # Data_len = len(Time_step)
+        # for i in range(Data_len):
+        #     f.write(str(Time_step[i] / Period) + " ")
+        # f.write("\n")
+        #
+        # for i in range(dof * 2):
+        #     for j in range(Data_len):
+        #         f.write(str(Average_Eigenvalue_list[i][j]) + " ")
+        #     f.write("\n")
+        #
+        # f.close()
+        #
+        # log_path = os.path.join(folder_path,"Micaocanonical Average action angle.txt")
+        # f1 = open(log_path,"w")
+        # f1.write(str(Iterate_number) + "\n")
+        # for i in range(Iterate_number):
+        #     for j in range(dof):
+        #         f1.write(str(Initial_action_list[i][j]) + " ")
+        #     f1.write("\n")
+        #     for j in range(dof):
+        #         f1.write(str(Initial_angle_list[i][j]) + " ")
+        #     f1.write("\n")
+        #
+        # f1.close()
+
+
+        plt.show()

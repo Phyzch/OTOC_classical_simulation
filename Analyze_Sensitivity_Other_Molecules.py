@@ -599,7 +599,6 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
             f.write("\n")
         f.close()
 
-        print("down analysis")
 
 def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     matplotlib.rcParams.update({'font.size': 14})
