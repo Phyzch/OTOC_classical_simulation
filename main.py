@@ -23,14 +23,14 @@ def main():
     # Analyze_Stability_Matrix_change_action()
 
     # Analyze xp sensitivity for SWW model
-    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7_average_100_state/"
+    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7(small perturbation)/"
     Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
 
     # Analyze number operator sensitivity for SCCL2
     # SCCL2_Analyze_Sensitivity_number_operator()
 
     # SCCL2 scaling Hamiltonian xp stability matrix
-    folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100(try)/"
+    folder_path_SCCL2_scaling_Other_Molecule = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone//"
     # Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path_SCCL2_scaling_Other_Molecule)
 
 
@@ -52,7 +52,7 @@ def main():
 
 
     # Plot result
-    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100/"
+    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100(single trajectory)/"
     # Plot_all_Eigenvalue_for_diff_traj_from_file(folder_path)
 
 main()

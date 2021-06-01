@@ -72,18 +72,18 @@ def Plot_Trajectory_Other_molecule_BS_method():
     dof = 8
     Initial_action = [1 ,1 ,1 ,0 ,0 ,1 ,0 ,0]
     # Initial_action = [2,2,2,3,2,2,2,2]
-    Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+    # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
     Initial_angle = [5.50931976, 0.46196768, 6.060698 ,  1.1348094 , 5.28584671 ,4.77783969,
- 5.87302753 ,1.49436109]
+  5.87302753 ,1.49436109]
     f0 = 500
 
-    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100/"
+    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100(single trajectory)/"
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
     final_time = 0.5
-
-    Time_step = np.linspace(0, final_time, 300)
+    Time_step_len = 1000
+    Time_step = np.linspace(0, final_time, Time_step_len)
 
     Initial_position = Initial_action + Initial_angle
 
@@ -93,36 +93,33 @@ def Plot_Trajectory_Other_molecule_BS_method():
     # solve dynamics
     # sol [ time_step, 2 * dof]
     sol_list = []
-    dev_t_list = []
     time = 0
     for i in range(Iter_number):
         if(i!=0):
             Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
             Initial_position = Initial_action + Initial_angle
         time, sol, _  = Evolve_dynamics_Other_Molecule_BS_method(Initial_position,Time_step, V0, scaling_parameter, frequency, f0, nquanta_list, nquanta_list_trans)
+        time = time[:Time_step_len]
+        sol = sol[:Time_step_len][:]
         # Define quantity which is deviation of action
-        Len = len(time)
-        dev_t = []
-        for j in range(Len):
-            dev =  np.sqrt(np.sum (np.power(sol[j][:dof] - Initial_action , 2) ) / dof)
-            dev_t.append(dev)
-        dev_t_list.append(dev_t)
         sol_list.append(sol)
 
     sol = np.mean(sol_list , 0)
 
-    Period = 0.03
     fig2, ax2 = plt.subplots(nrows=1, ncols=1)
 
     for i in range(dof):
-        ax2.plot(time / Period, sol[:, i] , label=' J ' + str(i + 1) + ' (t)')
+        ax2.plot(time , sol[:, i] , label=' J ' + str(i + 1) + ' (t)')
 
     ax2.legend(loc='best')
-    ax2.set_xlabel('t/T')
+    ax2.set_xlabel('t (ps) ')
     # ax2.set_yscale('log')
     ax2.set_title('BS method')
 
-    dev_t_mean = np.mean(dev_t_list, 0)
+    action_t = np.array( [sol[i][:dof] for i in range(Time_step_len)] )
+
+    dev_t_mean = np.sqrt( np.sum(np.power(action_t - Initial_action,2) , 1) )
+
     fig3, ax3 =  plt.subplots(nrows=1, ncols=1)
     ax3.plot(time , dev_t_mean, linewidth = 6)
     ax3.set_xlabel('t(ps)')
@@ -132,7 +129,7 @@ def Plot_Trajectory_Other_molecule_BS_method():
     # save the result
     file_path = os.path.join(folder_path, "action_motion.txt")
     f = open(file_path, "w")
-    f.write(str(dof) + "\n")
+    f.write(str(Iter_number) + "\n")
     Data_len = len(time)
     for i in range(Data_len):
         f.write(str(time[i]) + " ")
@@ -143,6 +140,20 @@ def Plot_Trajectory_Other_molecule_BS_method():
     f.write("\n")
 
     f.close()
+
+    file_path = os.path.join(folder_path , "trajectory.txt")
+    with open( file_path , "w") as f:
+        Data_len = len(time)
+        for i in range(Data_len):
+            f.write(str(time[i]) + " \n")
+            f.write("action :   ")
+            for j in range(dof):
+                f.write(str(sol[i][j]) + " , ")
+            f.write("\n")
+            f.write("angle:  ")
+            for j in range(dof, 2*dof):
+                f.write(str(sol[i][j]) + " , ")
+            f.write("\n")
 
     plt.show()
 

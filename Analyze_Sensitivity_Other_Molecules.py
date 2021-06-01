@@ -143,9 +143,9 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.5
+    final_time = 0.1
 
-    Time_step_len = 1000
+    Time_step_len = 100
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
@@ -164,12 +164,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
     nquanta_list_trans = np.transpose(nquanta_list)
 
-    iter_index = -1
+    iter_index = 0
     while(iter_index < Iteration_number_per_core):
         iter_index = iter_index + 1
         Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-        Initial_angle = [5.50931976, 0.46196768, 6.060698 ,  1.1348094 , 5.28584671, 4.77783969,
-            5.87302753 ,1.49436109]
         print("rank = " + str(rank) + " angle =  " + str(Initial_angle))
 
         random_angle_list.append(Initial_angle)
@@ -185,15 +183,15 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                                                              frequency, f0, nquanta_list, nquanta_list_trans)
 
         # check if we have J = 0 in simulation
-        Zero_bool = False
-        for i in range(Time_step_len):
-            for j in range(dof):
-                if(sol[i][j] == 0):
-                    Zero_bool = True
-        if Zero_bool == True :
-            # redo simulation with different angle.
-            iter_index = iter_index - 1
-            continue
+        # Zero_bool = False
+        # for i in range(Time_step_len):
+        #     for j in range(dof):
+        #         if(sol[i][j] == 0):
+        #             Zero_bool = True
+        # if Zero_bool == True :
+        #     # redo simulation with different angle.
+        #     iter_index = iter_index - 1
+        #     continue
 
         if(finish_simulation == False):
             print("Simulation failed with angle:  " + str(Initial_angle) +" and iter index :  " + str(iter_index) +"  for original dynamics" )
@@ -234,19 +232,19 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                 sol1 = np.concatenate((sol1, one_array), axis=0)
 
             # check if J == 0
-            for i in range(Time_step_len):
-                for j in range(dof):
-                    if (sol1[i][j] == 0):
-                        Zero_bool = True
-            if Zero_bool == True:
-                break
+            # for i in range(Time_step_len):
+            #     for j in range(dof):
+            #         if (sol1[i][j] == 0):
+            #             Zero_bool = True
+            # if Zero_bool == True:
+            #     break
 
             Sol_change_list.append(sol1)
 
-        if Zero_bool == True :
-            # redo simulation with different angle.
-            iter_index = iter_index - 1
-            continue
+        # if Zero_bool == True :
+        #     # redo simulation with different angle.
+        #     iter_index = iter_index - 1
+        #     continue
 
         phase_jitter = 0.001
         for i in range(dof):
@@ -275,19 +273,19 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                 sol1 = np.concatenate((sol1, one_array), axis=0)
 
             # check if J == 0
-            for i in range(Time_step_len):
-                for j in range(dof):
-                    if (sol1[i][j] == 0):
-                        Zero_bool = True
-            if Zero_bool == True:
-                break
+            # for i in range(Time_step_len):
+            #     for j in range(dof):
+            #         if (sol1[i][j] == 0):
+            #             Zero_bool = True
+            # if Zero_bool == True:
+            #     break
 
             Sol_change_list.append(sol1)
 
-        if Zero_bool == True :
-            # redo simulation with different angle.
-            iter_index = iter_index - 1
-            continue
+        # if Zero_bool == True :
+        #     # redo simulation with different angle.
+        #     iter_index = iter_index - 1
+        #     continue
 
         # we first compute \partial Q_{i} / \partial J_{j} or \partial Q_{i} / \partial theta_{j}
         # for original dynamics
@@ -487,7 +485,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
 
         Lyapunov_exponent_list = []
         for i in range(2 * dof):
-            Lyapunov_exponent = np.log(Eigen_value_list[i][1:]) / (2 * np.array(Time_step[1:]))
+            if(Eigen_value_list[i][0] != 0):
+                Lyapunov_exponent = np.log(Eigen_value_list[i][1:]) / (2 * np.array(Time_step[1:]))
+            else:
+                Lyapunov_exponent = np.zeros(Time_step_len - 1)
             Lyapunov_exponent_list.append(Lyapunov_exponent)
 
         # plot Lyapunov exponent
@@ -524,7 +525,10 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
         for i in range(Iterate_number):
             Lyapunov_exponent_single_trajectory = []
             for j in range(2 * dof):
-                Lyapunov_exponent = np.log( Eigenvalue_List_in_all_simulation[i][j][1:] ) / (2 * np.array(Time_step[1:]) )
+                if(Eigenvalue_List_in_all_simulation[i][j][0] != 0):
+                    Lyapunov_exponent = np.log( Eigenvalue_List_in_all_simulation[i][j][1:] ) / (2 * np.array(Time_step[1:]) )
+                else:
+                    Lyapunov_exponent = np.zeros(Time_step_len - 1)
                 Lyapunov_exponent_single_trajectory.append(Lyapunov_exponent)
             Lyapunov_exponent_all.append(Lyapunov_exponent_single_trajectory)
 
@@ -598,6 +602,8 @@ def Other_molecules_Analyze_Stability_Matrix_for_xp(folder_path):
                 f.write(str(Average_Lyapunov_exponent[i][j]) + " " )
             f.write("\n")
         f.close()
+
+        plt.show()
 
 
 def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):

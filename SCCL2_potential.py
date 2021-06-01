@@ -97,7 +97,7 @@ def Other_molecule_angle_velocity(action, angle, V0,  scaling_parameter, frequen
 
 
 
-    # for vectorization: coupling_scaling = - freq[i] * (2* sqrt{J_{i}} * cos(theta(j)) / 270
+    # for vectorization: coupling_scaling = - np.sqrt(freq[i]) * (2* sqrt{J_{i}} * cos(theta(j)) / 270
     Coupling_scaling = []
     for j in range(dof):
         if(action[j] > 0):
