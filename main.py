@@ -23,7 +23,7 @@ def main():
     # Analyze_Stability_Matrix_change_action()
 
     # Analyze xp sensitivity for SWW model
-    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7(small perturbation)/"
+    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/coherent_state/try/"
     Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
 
     # Analyze number operator sensitivity for SCCL2

@@ -363,46 +363,46 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 1
+    Iterate_number = 40
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
     Period = 0.03
 
-    Initial_action = [2, 2, 3, 3, 3, 2]
-    Initial_energy = np.sum( np.array(frequency) * np.array(Initial_action) )
+    # we add new option. sample coherent state
+    coherent_state_alpha_amplitude_list = np.array([0.5, 0.5, 0, 0.5, 0, 0])
+    coherent_state_alpha_angle_list = [0,30,0, 0, 0, 0]
+    coherent_state_alpha_angle_list = np.array(coherent_state_alpha_angle_list) /180 * np.pi
+    coherent_state_x = coherent_state_alpha_amplitude_list * np.cos(coherent_state_alpha_angle_list)
+    coherent_state_p = coherent_state_alpha_amplitude_list * np.sin(coherent_state_alpha_angle_list)
+    std_for_xp = 1/2
+
+    # Initial_action = [2 ,2, 0.1, 2 , 0.1, 0.1]
+    # Initial_energy = np.sum( np.array(frequency) * np.array(Initial_action) )
 
 
     Eigenvalue_List_in_all_simulation = []
     Singularvalue_List_in_all_simulation = []
 
-    Initial_action_list = []
     random_angle_list = []
-    Max_quanta_number = 6
-
+    random_action_list = []
     Iteration_number_per_core = int(Iterate_number / num_proc)
     Iterate_number = Iteration_number_per_core * num_proc
 
     for iter_index in range(Iteration_number_per_core):
 
-        # random sample Initial action in microcanonical ensemble
-        # energy = 0
-        #
-        # Initial_action = []
-        # while( any( [(abs(energy - Initial_energy) > Initial_energy / 20) , (Initial_action in Initial_action_list)] )  ):
-        #     Initial_action = np.array([ int( 1 + np.random.random() * (Max_quanta_number-1) ) for i in range(dof) ])
-        #     energy = np.sum(frequency * Initial_action)
-        #     Initial_action = Initial_action.tolist()
-        #
-        # Initial_action_list.append(Initial_action)
+        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
-        Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+        random_number = std_for_xp * np.random.normal(0,std_for_xp, 2 * dof)
+        x = coherent_state_x + random_number[:dof]
+        p = coherent_state_p + random_number[dof:]
+        Initial_action = np.power(x,2) + np.power(p,2)
+        Initial_angle = np.arctan( p / x )
+        Initial_action = Initial_action.tolist()
+        Initial_angle = Initial_angle.tolist()
+
         random_angle_list.append(Initial_angle)
-
-        # print('initial action')
-        # print(Initial_action)
-        # print('initial angle:')
-        # print(Initial_angle)
+        random_action_list.append(Initial_action)
 
         Initial_position = Initial_action + Initial_angle
 
@@ -531,6 +531,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     Eigenvalue_List_in_all_simulation = np.real(Eigenvalue_List_in_all_simulation)
     Singularvalue_List_in_all_simulation = np.real(Singularvalue_List_in_all_simulation)
     random_angle_list = np.real(random_angle_list)
+    random_action_list = np.real(random_action_list)
 
     # size: [num_proc, iteration_number_per_core, 2*dof, Time_step_len]
     recv_Eigenvalue_list_in_all_simulation = []
@@ -546,10 +547,12 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     # angle_list : size : [num_proc, iteration_number_per_core, dof]
     recv_angle_list = []
+    recv_action_list = []
     if (rank == 0):
         recv_angle_list = np.empty([num_proc, Iteration_number_per_core, dof], dtype=np.float64)
-
+        recv_action_list = np.empty([num_proc, Iteration_number_per_core, dof], dtype=np.float64)
     comm.Gather(random_angle_list, recv_angle_list, 0)
+    comm.Gather(random_action_list, recv_action_list, 0)
 
     if(rank == 0):
 
@@ -570,16 +573,22 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
         random_angle_list = np.reshape(recv_angle_list,
                                        (recv_angle_list_shape[0] * recv_angle_list_shape[1], recv_angle_list_shape[2])
                                        )
+        recv_action_list_shape = recv_action_list.shape
+        random_action_list = np.reshape(recv_action_list,
+                                        (recv_action_list_shape[0] * recv_action_list_shape[1], recv_action_list_shape[2])
+                                        )
 
         print("random angle received:  " + str(random_angle_list))
 
         # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
         Largest_Lypunov_exponent_in_all_simulation = 0
+        Initial_action_for_largest_eigenvalue = []
         for i in range(Iterate_number):
             Largest_Lyapunov_exponent = np.log(Eigenvalue_List_in_all_simulation[i][0][-1]) / (2 * Time_step[-1])
             if (Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
                 Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
                 Initial_angle_for_largest_eigenvalue = random_angle_list[i]
+                Initial_action_for_largest_eigenvalue = random_action_list[i]
                 Largest_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
                 Largest_Singularvalue_List = Singularvalue_List_in_all_simulation[i]
 
@@ -587,10 +596,11 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
         Eigen_value_list = Largest_Eigenvalue_List
 
         print('initial action')
-        print(Initial_action)
+        print(Initial_action_for_largest_eigenvalue)
         print('initial angle:')
         Initial_angle = Initial_angle_for_largest_eigenvalue
         print(Initial_angle)
+
 
         # plot result
         fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -662,6 +672,24 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
         Average_Lyapunov_exponent = np.mean(Lyapunov_exponent_all, 0)
 
+
+        # compute Intermittency : R_{n} = <f(x)^{n}> / <f(x)>^{n}
+        intermittency_order = [2, 3,  5 ]
+        intermittency_order_number = len(intermittency_order)
+        intermittency_for_largest_eigenvalue = []
+        for n in intermittency_order:
+            R = np.mean( np.power(Eigenvalue_List_in_all_simulation , n) , 0 ) / np.power( np.mean(Eigenvalue_List_in_all_simulation , 0 ) , n )
+            intermittency_for_largest_eigenvalue.append(R[0])
+
+        fig5, ax5  = plt.subplots(nrows=1, ncols=1)
+        for n in range(intermittency_order_number):
+            ax5.plot(Time_step, intermittency_for_largest_eigenvalue[n] , label = 'n = ' + str(intermittency_order[n]))
+        ax5.legend(loc = 'best')
+        ax5.set_xlabel('t(ps)')
+        ax5.set_ylabel('$<p^{n}> / <p>^{n} $')
+        ax5.set_title('Intermittency')
+        ax5.set_yscale('log')
+
         # save the result
         file_path = os.path.join(folder_path, "Average_Eigenvalue.txt")
         f = open(file_path, "w")
@@ -711,10 +739,18 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
         f.write('\n')
         f.write(str(Initial_angle_for_largest_eigenvalue))
         f.write('\n')
-        f.write('all angle: ')
+        f.write('action for largest Lyapunov exponent')
+        f.write('\n')
+        f.write(str(Initial_action_for_largest_eigenvalue))
+        f.write('\n')
+        f.write('all angle and action : ')
         for i in range(Iterate_number):
             f.write(str(random_angle_list[i]))
             f.write('\n')
+            f.write(str(random_action_list[i]))
+            f.write('\n')
+            f.write('\n')
+
         f.close()
 
         file_path3 = os.path.join(folder_path, 'Average_over_Lyapunov_exponent.txt')
@@ -730,7 +766,19 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
             f.write("\n")
         f.close()
 
-
+        intermittency_file = os.path.join(folder_path, 'intermittency.txt')
+        with open (intermittency_file, "w") as f:
+            f.write("intermittency order:  \n ")
+            for i in range(intermittency_order_number):
+                f.write( str(intermittency_order[i]) + " ")
+            f.write('\n')
+            for i in range(Time_step_len):
+                f.write(str(Time_step[i]) + " ")
+            f.write("\n")
+            for i in range(intermittency_order_number):
+                for j in range(Time_step_len):
+                    f.write(str(intermittency_for_largest_eigenvalue[i][j]) + " ")
+                f.write("\n")
 
 
         # save data:
