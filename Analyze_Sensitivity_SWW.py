@@ -18,7 +18,7 @@ def Plot_Trajectory_SWW():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 7
+    V_phi = 0
     # V_phi = 0
 
     dof = 6
@@ -27,13 +27,13 @@ def Plot_Trajectory_SWW():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.6
+    final_time = 2
 
-    Time_step = np.linspace(0,final_time,50)
+    Time_step = np.linspace(0,final_time,100)
 
     Initial_action = [2,2,3,3,3,2]
-    # Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
-    Initial_angle1 = [1.26902252, 0.56623613, 0.12324133, 3.25980214, 0.11200997, 0.10889953]
+    Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
+    # Initial_angle1 = [1.26902252, 0.56623613, 0.12324133, 3.25980214, 0.11200997, 0.10889953]
 
     print('initial angle:')
     print(Initial_angle1)
@@ -141,19 +141,19 @@ def Plot_Trajectory_SWW():
     ax3[2].set_ylim([-1000,1000])
 
 
-    file_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7(small perturbation)/trajectory.txt"
-    with open(file_path, "w") as f:
-        Time_step_len = len(Time_step)
-        for i in range(Time_step_len):
-            f.write("t: " + str(Time_step[i]) + "\n")
-            f.write("action:  ")
-            for j in range(dof):
-                f.write(str(sol[i][j]) + " ")
-            f.write("\n")
-            f.write("angle:  ")
-            for j in range(dof, 2*dof):
-                f.write( str(sol[i][j]) + " ")
-            f.write("\n")
+    # file_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7(small perturbation)/trajectory.txt"
+    # with open(file_path, "w") as f:
+    #     Time_step_len = len(Time_step)
+    #     for i in range(Time_step_len):
+    #         f.write("t: " + str(Time_step[i]) + "\n")
+    #         f.write("action:  ")
+    #         for j in range(dof):
+    #             f.write(str(sol[i][j]) + " ")
+    #         f.write("\n")
+    #         f.write("angle:  ")
+    #         for j in range(dof, 2*dof):
+    #             f.write( str(sol[i][j]) + " ")
+    #         f.write("\n")
 
     plt.show()
 
@@ -342,6 +342,7 @@ def Analyze_Stability_Matrix_change_action():
 
 def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     matplotlib.rcParams.update({'font.size': 14})
+
     D = 32924
 
     # This term tune the chaos
@@ -354,7 +355,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])  # in unit of cm^{-1}
 
-    final_time = 0.6
+    final_time = 1
 
     Time_step_len = 500
 
@@ -363,23 +364,26 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 40
+    Iterate_number = 500
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
     Period = 0.03
 
     # we add new option. sample coherent state
-    coherent_state_alpha_amplitude_list = np.array([0.5, 0.5, 0, 0.5, 0, 0])
-    coherent_state_alpha_angle_list = [0,30,0, 0, 0, 0]
-    coherent_state_alpha_angle_list = np.array(coherent_state_alpha_angle_list) /180 * np.pi
-    coherent_state_x = coherent_state_alpha_amplitude_list * np.cos(coherent_state_alpha_angle_list)
-    coherent_state_p = coherent_state_alpha_amplitude_list * np.sin(coherent_state_alpha_angle_list)
-    std_for_xp = 1/2
+    # coherent_state_alpha_amplitude_list = np.array([0.5, 0.5, 0, 0.5, 0, 0])
+    # coherent_state_alpha_angle_list = [0,30,0, 0, 0, 0]
+    # coherent_state_alpha_angle_list = np.array(coherent_state_alpha_angle_list) /180 * np.pi
+    # coherent_state_x = coherent_state_alpha_amplitude_list * np.cos(coherent_state_alpha_angle_list)
+    # coherent_state_p = coherent_state_alpha_amplitude_list * np.sin(coherent_state_alpha_angle_list)
+    # std_for_xp = 1/2
 
-    # Initial_action = [2 ,2, 0.1, 2 , 0.1, 0.1]
-    # Initial_energy = np.sum( np.array(frequency) * np.array(Initial_action) )
+    Initial_action = [2 ,2, 3, 3 , 3, 2]
+    Initial_action = [float(i) for i in Initial_action]
+    Initial_energy = np.sum( np.array(frequency) * np.array(Initial_action) )
 
+    action_jitter = 0.001
+    phase_jitter = 0.001
 
     Eigenvalue_List_in_all_simulation = []
     Singularvalue_List_in_all_simulation = []
@@ -391,15 +395,17 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     for iter_index in range(Iteration_number_per_core):
 
-        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+        # Initial_angle = [3.38093368 , 6.1107057 , 3.6189656 , 0.70946592, 5.54216558 ,3.12875082]
+        Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
-        random_number = std_for_xp * np.random.normal(0,std_for_xp, 2 * dof)
-        x = coherent_state_x + random_number[:dof]
-        p = coherent_state_p + random_number[dof:]
-        Initial_action = np.power(x,2) + np.power(p,2)
-        Initial_angle = np.arctan( p / x )
-        Initial_action = Initial_action.tolist()
-        Initial_angle = Initial_angle.tolist()
+        # random_number = std_for_xp * np.random.normal(0, std_for_xp, 2 * dof)
+        # x = coherent_state_x + random_number[:dof]
+        # p = coherent_state_p + random_number[dof:]
+        # Initial_action = np.power(x,2) + np.power(p,2)
+        # Initial_angle = np.arctan( p / x )
+        #
+        # Initial_action = Initial_action.tolist()
+        # Initial_angle = Initial_angle.tolist()
 
         random_angle_list.append(Initial_angle)
         random_action_list.append(Initial_action)
@@ -410,7 +416,6 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
         _, sol, finish_simulation = Evolve_dynamics_SWW_BS_method(Initial_position, Time_step, frequency, V_phi, D, Tuple_list)
 
         Sol_change_list = []   # list of trajectory after impose a phase or action jitter
-        action_jitter = 0.0001
 
         for i in range(dof):
             action_change = np.zeros(dof)
@@ -426,7 +431,6 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
             Sol_change_list.append(sol1)
 
-        phase_jitter = 0.0001
         for i in range(dof):
             phase_change = np.zeros(dof)
             phase_change[i] = phase_jitter
@@ -462,6 +466,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
         XP_matrix = np.array(XP_matrix)
 
         Diff_XP_matrix_list = []  # change of XP matrix after we change action/ angle  :  Delta Q_{i}. or Delta P_{i}
+        XP_matrix_new_list = []
         for i in range( 2 * dof):
             XP_matrix_new = []
             for j in range(2*dof):
@@ -484,7 +489,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
             Diff_XP_matrix = XP_matrix_new - XP_matrix
 
             Diff_XP_matrix_list.append(Diff_XP_matrix)
-
+            XP_matrix_new_list.append(XP_matrix_new)
         #  Diff_XP_matrix_list: size [2*dof, 2*dof, Time_len]
 
         Stability_Matrix_list = [] # Stability_Matrix at different time step
@@ -531,7 +536,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     Eigenvalue_List_in_all_simulation = np.real(Eigenvalue_List_in_all_simulation)
     Singularvalue_List_in_all_simulation = np.real(Singularvalue_List_in_all_simulation)
     random_angle_list = np.real(random_angle_list)
-    random_action_list = np.real(random_action_list)
+    random_action_list = np.real( random_action_list )
 
     # size: [num_proc, iteration_number_per_core, 2*dof, Time_step_len]
     recv_Eigenvalue_list_in_all_simulation = []
@@ -579,7 +584,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
                                         )
 
         print("random angle received:  " + str(random_angle_list))
-
+        print("random action received : " + str(random_action_list) )
         # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
         Largest_Lypunov_exponent_in_all_simulation = 0
         Initial_action_for_largest_eigenvalue = []

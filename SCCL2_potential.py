@@ -114,7 +114,7 @@ def Other_molecule_angle_velocity(action, angle, V0,  scaling_parameter, frequen
     coupling_list = Coupling_scaling ** nquanta_list
 
     coupling_list_prod = np.prod(coupling_list, axis = 1)
-    coupling_list_prod = coupling_list_prod * 3050
+    coupling_list_prod = coupling_list_prod * V0
 
     # now coupling_list_prod == 3050 * \prod (- freq[i] * (2* sqrt{J_{i}} * cos(theta(j)) / 270) ^{n_{j}}
     # Now * nquanta[i]  here i is dof.
@@ -153,7 +153,7 @@ def  Other_molecule_action_velocity(action, angle, V0,  scaling_parameter, frequ
     coupling_list = Coupling_scaling ** nquanta_list
 
     coupling_list_prod = np.prod(coupling_list, axis=1)
-    coupling_list_prod = coupling_list_prod * 3050
+    coupling_list_prod = coupling_list_prod * V0
 
     # now coupling_list_prod == 3050 * \prod (- freq[i] * (2* sqrt{J_{i}} * cos(theta(j)) / 270) ^{n_{j}}
     # Now * nquanta[i]  here i is dof.
