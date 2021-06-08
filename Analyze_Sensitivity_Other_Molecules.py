@@ -613,32 +613,35 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     Coefficient = np.array(Coefficient) * 1
 
     dof = 6
-    final_time = 0.04
+    final_time = 0.1
 
     Period = 0.03
 
-    Time_step_len = 1000
+    Time_step_len = 100
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
-    Iterate_number = 20
+    Iterate_number = 1
 
     # Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
 
-    Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
+    # Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
+    Initial_action = [3, 3, 3, 2, 2, 2 ]
 
     Eigenvalue_List_in_all_simulation = []
     Singularvalue_List_in_all_simulation = []
     Largest_Lypunov_exponent_in_all_simulation = 0
 
-    # Initial_angle = [31.94, 6.098, 8.846, 16.529, 20.217,
-    #                  14.1]
+    Initial_angle = [5.29159832, 1.35249775, 0.20439749, 3.27445061, 1.99827041, 0.60089612]
 
-    Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
+    # Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
+
     Initial_angle_for_largest_eigenvalue = []
+    Initial_action_for_largest_eigenvalue = []
     Largest_Eigenvalue_List= []
     Largest_Singularvalue_List = []
     random_angle_list = []
+    random_action_list = []
 
     Iteration_number_per_core = int(Iterate_number / num_proc)
     Iterate_number = Iteration_number_per_core * num_proc
@@ -649,7 +652,10 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
             Initial_angle_new = [ 2 * np.pi * np.random.random() for i in range(dof) ]
             Initial_angle = Initial_angle_new
 
+        Initial_action = [float(i) for i in Initial_action]
+
         random_angle_list.append(Initial_angle)
+        random_action_list.append(Initial_action)
 
         Initial_position = Initial_action + Initial_angle
 
@@ -823,6 +829,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     Eigenvalue_List_in_all_simulation = np.real(Eigenvalue_List_in_all_simulation)
     Singularvalue_List_in_all_simulation = np.real(Singularvalue_List_in_all_simulation)
     random_angle_list = np.real(random_angle_list)
+    random_action_list = np.real(random_action_list)
 
     # size: [num_proc, iteration_number_per_core, 2*dof, Time_step_len]
     recv_Eigenvalue_list_in_all_simulation = []
@@ -836,10 +843,13 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
     # angle_list : size : [num_proc, iteration_number_per_core, dof]
     recv_angle_list = []
+    recv_action_list = []
     if(rank == 0):
         recv_angle_list = np.empty([num_proc, Iteration_number_per_core , dof] ,dtype = np.float64)
+        recv_action_list = np.empty([num_proc, Iteration_number_per_core , dof] ,dtype = np.float64)
 
     comm.Gather(random_angle_list, recv_angle_list , 0)
+    comm.Gather(random_action_list, recv_action_list, 0)
 
     if (rank == 0):
         # convert recved data to original format
@@ -859,6 +869,11 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         random_angle_list = np.reshape(recv_angle_list,
                                        (recv_angle_list_shape[0] * recv_angle_list_shape[1] , recv_angle_list_shape[2])
                                        )
+
+        recv_action_list_shape = recv_action_list.shape
+        random_action_list = np.reshape(recv_action_list,
+                                        (recv_action_list_shape[0] * recv_action_list_shape[1] , recv_action_list_shape[2])
+                                        )
 
         # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
         min_nonzero_len = 100000
@@ -882,6 +897,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
             if(Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
                 Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
                 Initial_angle_for_largest_eigenvalue = random_angle_list[i]
+                Initial_action_for_largest_eigenvalue = random_action_list[i]
                 Largest_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
                 Largest_Singularvalue_List = Singularvalue_List_in_all_simulation[i]
 
@@ -889,7 +905,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         Eigen_value_list = Largest_Eigenvalue_List
 
         print('initial action')
-        print(Initial_action)
+        print(Initial_action_for_largest_eigenvalue)
         Initial_angle = Initial_angle_for_largest_eigenvalue
         print('initial angle:')
         print(Initial_angle)
@@ -897,11 +913,11 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         # plot largest eigenvalue
         fig, ax = plt.subplots(nrows=1, ncols=1)
         for i in range(2 * dof):
-            ax.plot(np.array(Time_step) / Period, Eigen_value_list[i],
+            ax.plot(np.array(Time_step), Eigen_value_list[i],
                     label='Eigenvalue ' + str(i + 1) + " for $M^{2}$ ")
 
         ax.legend(loc='best')
-        ax.set_xlabel('t/T')
+        ax.set_xlabel('t(ps)')
 
         # ax.set_xscale('log')
         ax.set_yscale('log')
@@ -909,10 +925,10 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         # plot largest singlar value
         fig1, ax1 = plt.subplots(nrows=1, ncols=1)
         for i in range(2 * dof):
-            ax1.plot(np.array(Time_step) / Period, Singular_value_list[i],
+            ax1.plot(np.array(Time_step), Singular_value_list[i],
                      label='Singular value ' + str(i + 1) + ' for M')
         ax1.legend(loc='best')
-        ax1.set_xlabel('t/T')
+        ax1.set_xlabel('t(ps)')
 
         # ax1.set_xscale('log')
         ax1.set_yscale('log')
@@ -924,9 +940,9 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
         Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation,0)
 
         for i in range( 2*dof):
-            ax3.plot(np.array(Time_step) / Period, Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
+            ax3.plot(np.array(Time_step), Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
 
-        ax3.set_xlabel('t/T')
+        ax3.set_xlabel('t(ps)')
         ax3.set_ylabel('Average Eigenvalue')
 
         ax3.set_title('Average Eigenvalue')
@@ -966,6 +982,24 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
             f.write("\n")
 
         f.close()
+
+        file_path2 = os.path.join(folder_path, "action and angle.txt")
+        with open(file_path2,"w") as f:
+            f.write('angle for largest Lyapunov exponent')
+            f.write('\n')
+            f.write(str(Initial_angle_for_largest_eigenvalue))
+            f.write('\n')
+            f.write('action for largest Lyapunov exponent')
+            f.write('\n')
+            f.write(str(Initial_action_for_largest_eigenvalue))
+            f.write('\n')
+            f.write('all angle and action : ')
+            for i in range(Iterate_number):
+                f.write(str(random_angle_list[i]))
+                f.write('\n')
+                f.write(str(random_action_list[i]))
+                f.write('\n')
+                f.write('\n')
 
     plt.show()
 
@@ -1059,9 +1093,9 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     Coefficient = np.array(Coefficient) * 1
 
     dof = 6
-    final_time = 0.06
+    final_time = 0.1
 
-    Time_step = np.linspace(0, final_time, 100)
+    Time_step = np.linspace(0, final_time, 1000)
 
     Iteration_number = 1
 
@@ -1070,7 +1104,8 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     action_jitter = 0.001
 
     Initial_action = [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
-
+    # Initial_action = [3 ,3 ,3 ,2 ,2 ,2  ]
+    # Initial_action = [2 , 1 , 2 , 1 ,2 ,3 ]
     # Initial_action1 = [2, 2, 3, 3, 3 + action_jitter, 2]
 
     max_action_in_all_simulation = 0
@@ -1081,11 +1116,11 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
 
     for i in range(Iteration_number):
-        Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
-        # Initial_angle = [30.93947782165516, 6.097124720812282, 8.845719425253785, 16.528919283844296, 20.21703311486376, 14.099748439492283]
+        Initial_angle = [31, 6.1, 8.84, 16.536, 20.22, 14.1]
 
-        Initial_angle = [31.93947782165516, 6.097124720812282, 8.845719425253785, 16.528919283844296, 20.21703311486376, 14.099748439492283]
+        # Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479 ,2.9231359,  3.47953764]
         # for j in range(dof):
         #     Initial_angle[j] = (0.02 * (np.random.random()-0.5) * 2 +1) * Initial_angle[j]
 
@@ -1122,21 +1157,26 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
     Period = 0.03
 
-
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    for i in range(dof):
+        ax.plot(Time_step, sol[:,i] , label = 'J ' + str(i+1) + ' (t)')
+    ax.legend(loc = 'best')
+    ax.set_xlabel('t (ps)')
+    ax.set_yscale('log')
 
     fig2, ax2 = plt.subplots(nrows=3, ncols=1)
 
     for i in range(dof):
-        ax2[0].plot(Time_step/Period , sol[:,i] , label = 'J' + str(i+1) + ' (t)')
-        ax2[1].plot(Time_step / Period, np.cos(sol[:, i + dof]), label='$cos \phi$ ' + str(i + 1) + " (t)")
-        ax2[2].plot(Time_step / Period, np.sin(sol[:, i + dof]), label='$sin \phi$ ' + str(i + 1) + " (t)")
+        ax2[0].plot(Time_step  , sol[:,i] , label = 'J' + str(i+1) + ' (t)')
+        ax2[1].plot(Time_step , np.cos(sol[:, i + dof]), label='$cos \phi$ ' + str(i + 1) + " (t)")
+        ax2[2].plot(Time_step , np.sin(sol[:, i + dof]), label='$sin \phi$ ' + str(i + 1) + " (t)")
 
     ax2[0].legend(loc='best')
     ax2[1].legend(loc='best')
     ax2[2].legend(loc='best')
-    ax2[0].set_xlabel('t/T')
-    ax2[1].set_xlabel('t/T')
-    ax2[2].set_xlabel('t/T')
+    ax2[0].set_xlabel('t (ps)')
+    ax2[1].set_xlabel('t (ps)')
+    ax2[2].set_xlabel('t (ps)')
 
     ax2[0].set_yscale('log')
 
@@ -1165,16 +1205,16 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     action_velocity_list = np.transpose(action_velocity_list)
 
     for i in range(dof):
-        ax3[0].plot(Time_step/Period , sol[:,i] , label = 'J' + str(i+1) + ' (t)')
-        ax3[1].plot(Time_step / Period, action_velocity_list[i] * cf, label ='action velocity '+ str(i+1) )
-        ax3[2].plot(Time_step / Period, angle_velocity_list[i] * cf, label = 'angle velocity  ' +str(i+1))
+        ax3[0].plot(Time_step , sol[:,i] , label = 'J' + str(i+1) + ' (t)')
+        ax3[1].plot(Time_step , action_velocity_list[i] * cf, label ='action velocity '+ str(i+1) )
+        ax3[2].plot(Time_step , angle_velocity_list[i] * cf, label = 'angle velocity  ' +str(i+1))
 
     ax3[0].legend(loc='best')
     ax3[1].legend(loc='best')
     ax3[2].legend(loc='best')
-    ax3[0].set_xlabel('t/T')
-    ax3[1].set_xlabel('t/T')
-    ax3[2].set_xlabel('t/T')
+    ax3[0].set_xlabel('t (ps)')
+    ax3[1].set_xlabel('t (ps)')
+    ax3[2].set_xlabel('t (ps)')
 
     sol_transpose = np.transpose(sol)
     for i in range(dof):

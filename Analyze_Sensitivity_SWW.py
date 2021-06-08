@@ -355,16 +355,16 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])  # in unit of cm^{-1}
 
-    final_time = 1
+    final_time = 5
 
-    Time_step_len = 500
+    Time_step_len = 1000
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
     Largest_Lyapunov_exponent_in_all_simulation = 0
     Initial_angle_for_largest_eigenvalue = [0,0,0,0,0,0]
 
-    Iterate_number = 500
+    Iterate_number = 1
 
     Largest_Eigenvalue_List = []
     Largest_Singularvalue_List = []
@@ -395,8 +395,8 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     for iter_index in range(Iteration_number_per_core):
 
-        # Initial_angle = [3.38093368 , 6.1107057 , 3.6189656 , 0.70946592, 5.54216558 ,3.12875082]
-        Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+        Initial_angle = [3.57317253, 4.02565235, 0.86191399, 4.04550951, 3.57043839, 0.88735252]
+        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
         # random_number = std_for_xp * np.random.normal(0, std_for_xp, 2 * dof)
         # x = coherent_state_x + random_number[:dof]

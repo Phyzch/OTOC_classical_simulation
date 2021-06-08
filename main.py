@@ -23,7 +23,7 @@ def main():
     # Analyze_Stability_Matrix_change_action()
 
     # Analyze xp sensitivity for SWW model
-    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/quantum classical correspondence without anharmonicity/V=7(500 trajectory)/"
+    folder_path_SW_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/quantum classical correspondence without anharmonicity/V=7 long time/"
     # Analyze_Stability_Matrix_for_xp_SWW(folder_path_SW_model)
 
     # Analyze number operator sensitivity for SCCL2
@@ -44,7 +44,7 @@ def main():
 
 
     #plot trajectory for  Grueebele Strickler Hamiltonian
-    # Plot_Trajectory_SCCL2_Realistic_Hamiltonian()
+    Plot_Trajectory_SCCL2_Realistic_Hamiltonian()
 
     # Sample_SCCL2_Realistic_Hamiltonian_angular_velocity()
 
