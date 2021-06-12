@@ -615,7 +615,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     dof = 6
     final_time = 0.02
 
-    Period = 0.02
+    Period = 0.03
 
     Time_step_len = 100
 
@@ -626,11 +626,11 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     # Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
 
     Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
-    # Initial_action = [3, 3, 3, 2, 2, 2 ]
+    Initial_action = [6.443361389024258 , 5.498726499017275 , 0.004483104899902918 , 3.4899575407048666 , 5.33742376176894 , 2.4610551812380934    ]
 
 
     # Initial_angle = [-0.14605803 ,-2.90979072,  5.548222 ,  -4.13046123  ,3.03059037 ,-4.14587365]
-    Initial_angle = [5.64267210628619 , 15.599748227027739 , 5.735664470146787 , -3.0438284437721053 , 2.9316823714284084 , 8.920742399199833]
+    Initial_angle = [6.187856532830749 , 3.0831171845949323 , 5.3885555263307054 , 5.343595874871913 , 2.7022494924080744 , 2.2882731849628586  ]
     # Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
 
     Iteration_number_per_core = int(Iterate_number / num_proc)
@@ -1150,7 +1150,7 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     for i in range(Iteration_number):
         # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
-        Initial_angle = [6.0252938 , 3.91642767 ,4.68152349 ,3.77998479 ,2.9231359 , 3.47953764]
+        Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479, 2.9231359 , 3.47953764]
 
         # Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479 ,2.9231359,  3.47953764]
         # for j in range(dof):

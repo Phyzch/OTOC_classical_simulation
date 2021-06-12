@@ -36,11 +36,11 @@ def main():
 
     # plot OTOC for  SCCL2 Strickler Gruebele Hamiltonian
     folder_path_SCCL2_realistic_model = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SCCL2_realistic_Hamiltonian/try/"
-    # Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path_SCCL2_realistic_model)
+    Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path_SCCL2_realistic_model)
 
     # plot trajectory for scaling Hamiltonian
     # Plot_Trajectory_Other_Molecules()
-    Plot_Trajectory_Other_molecule_BS_method()
+    # Plot_Trajectory_Other_molecule_BS_method()
 
 
     #plot trajectory for  Grueebele Strickler Hamiltonian
