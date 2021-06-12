@@ -72,12 +72,12 @@ def Plot_Trajectory_Other_molecule_BS_method():
     dof = 8
     Initial_action = [1 ,1 ,1 ,0 ,0 ,1 ,0 ,0]
     # Initial_action = [2,2,2,3,2,2,2,2]
-    # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-    Initial_angle = [5.50931976, 0.46196768, 6.060698 ,  1.1348094 , 5.28584671 ,4.77783969,
-  5.87302753 ,1.49436109]
+    Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+  #   Initial_angle = [5.50931976, 0.46196768, 6.060698 ,  1.1348094 , 5.28584671 ,4.77783969,
+  # 5.87302753 ,1.49436109]
     f0 = 500
 
-    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/11100100(single trajectory)/"
+    folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Other Molecule/Cyclopentanone/try/"
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 

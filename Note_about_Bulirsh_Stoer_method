@@ -1,0 +1,1 @@
+Because our problem is highly chaotic and its special case when we have J around 0. If we set step size too large: for example, with 0.1 ps , we set 10 steps and each step size is 0.01 ps, then our result will diverge. Thus make sure for every 0.03 ps, we should have 50 steps to have small step size and get right result

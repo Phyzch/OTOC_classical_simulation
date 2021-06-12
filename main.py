@@ -40,11 +40,11 @@ def main():
 
     # plot trajectory for scaling Hamiltonian
     # Plot_Trajectory_Other_Molecules()
-    # Plot_Trajectory_Other_molecule_BS_method()
+    Plot_Trajectory_Other_molecule_BS_method()
 
 
     #plot trajectory for  Grueebele Strickler Hamiltonian
-    Plot_Trajectory_SCCL2_Realistic_Hamiltonian()
+    # Plot_Trajectory_SCCL2_Realistic_Hamiltonian()
 
     # Sample_SCCL2_Realistic_Hamiltonian_angular_velocity()
 

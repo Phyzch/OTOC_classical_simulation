@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from Evolve_dynamics import Evolve_dynamics
 from Evolve_dynamics_Using_Bulirsch import Evolve_dynamics_SWW_BS_method
 import matplotlib
+
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -18,7 +19,7 @@ def Plot_Trajectory_SWW():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 0
+    V_phi = 7
     # V_phi = 0
 
     dof = 6
@@ -27,7 +28,7 @@ def Plot_Trajectory_SWW():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 2
+    final_time = 10
 
     Time_step = np.linspace(0,final_time,100)
 
@@ -79,18 +80,18 @@ def Plot_Trajectory_SWW():
     # difference between trajectory
     # Sol_diff = np.array(sol1) - np.array(sol)
 
-    fig2, ax2 = plt.subplots(nrows=2,ncols=1)
+    fig2, ax2 = plt.subplots(nrows=1,ncols=1)
 
     for i in range(dof):
-        ax2[0].plot(Time_step/Period , sol[:,i] , label = ' $\Delta$ J' + str(i) + ' (t)' )
-        ax2[1].plot(Time_step / Period, np.sin(sol[:, i + dof]), label='$sin \phi$ ' + str(i) + " (t)")
+        ax2.plot(Time_step , sol[:,i] , label = 'J' + str(i) + ' (t)' )
+        # ax2[1].plot(Time_step , np.sin(sol[:, i + dof]), label='$sin \phi$ ' + str(i) + " (t)")
 
-    ax2[0].legend(loc='best')
-    ax2[1].legend(loc='best')
-    ax2[0].set_xlabel('t/T')
-    ax2[1].set_xlabel('t/T')
+    ax2.legend(loc='best')
+    # ax2[1].legend(loc='best')
+    ax2.set_xlabel('t(ps)')
+    # ax2[1].set_xlabel('t(ps)')
 
-    ax2[0].set_yscale('log')
+    # ax2[0].set_yscale('log')
     # ax2[1].set_yscale('log')
 
     # ax2[0].set_xscale('log')
@@ -125,20 +126,20 @@ def Plot_Trajectory_SWW():
     angle_velocity_list = np.transpose(angle_velocity_list)
     action_velocity_list = np .transpose(action_velocity_list)
 
-    for i in range(dof):
-        ax3[0].plot(Time_step / Period, action_velocity_list[i] , label = 'action velocity ' + str(i+1) )
-        ax3[1].plot(Time_step/Period, angle_velocity_list[i] , label  = 'angle velocity ' + str(i+1)  )
-        ax3[2].plot(Time_step/Period , angle_combination_list, label = ' angle velocity combination 2 + 3  -1 ')
+    # for i in range(dof):
+    #     ax3[0].plot(Time_step,  action_velocity_list[i] , label = 'action velocity ' + str(i+1) )
+    #     ax3[1].plot(Time_step, angle_velocity_list[i] , label  = 'angle velocity ' + str(i+1)  )
+    #     ax3[2].plot(Time_step , angle_combination_list, label = ' angle velocity combination 2 + 3  -1 ')
+    #
+    # ax3[0].legend(loc='best')
+    # ax3[1].legend(loc='best')
+    #
+    # ax3[0].set_xlabel('t(ps)')
+    # ax3[1].set_xlabel('t(ps)')
 
-    ax3[0].legend(loc='best')
-    ax3[1].legend(loc='best')
-
-    ax3[0].set_xlabel('t/T')
-    ax3[1].set_xlabel('t/T')
-
-    ax3[0].set_ylim([-2000,2000])
-    ax3[1].set_ylim([-2000,2000])
-    ax3[2].set_ylim([-1000,1000])
+    # ax3[0].set_ylim([-2000,2000])
+    # ax3[1].set_ylim([-2000,2000])
+    # ax3[2].set_ylim([-1000,1000])
 
 
     # file_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/SW model/V=7(small perturbation)/trajectory.txt"

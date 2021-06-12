@@ -613,9 +613,9 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     Coefficient = np.array(Coefficient) * 1
 
     dof = 6
-    final_time = 0.1
+    final_time = 0.02
 
-    Period = 0.03
+    Period = 0.02
 
     Time_step_len = 100
 
@@ -625,39 +625,192 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
     # Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
 
-    # Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
-    Initial_action = [3, 3, 3, 2, 2, 2 ]
+    Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
+    # Initial_action = [3, 3, 3, 2, 2, 2 ]
 
-    Eigenvalue_List_in_all_simulation = []
-    Singularvalue_List_in_all_simulation = []
-    Largest_Lypunov_exponent_in_all_simulation = 0
 
-    Initial_angle = [5.29159832, 1.35249775, 0.20439749, 3.27445061, 1.99827041, 0.60089612]
-
+    # Initial_angle = [-0.14605803 ,-2.90979072,  5.548222 ,  -4.13046123  ,3.03059037 ,-4.14587365]
+    Initial_angle = [5.64267210628619 , 15.599748227027739 , 5.735664470146787 , -3.0438284437721053 , 2.9316823714284084 , 8.920742399199833]
     # Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
-
-    Initial_angle_for_largest_eigenvalue = []
-    Initial_action_for_largest_eigenvalue = []
-    Largest_Eigenvalue_List= []
-    Largest_Singularvalue_List = []
-    random_angle_list = []
-    random_action_list = []
 
     Iteration_number_per_core = int(Iterate_number / num_proc)
     Iterate_number = Iteration_number_per_core * num_proc
 
-    for l in range(Iteration_number_per_core):
+    parameter_list = [Time_step, frequency, Coefficient, nquanta_list]
 
+    initial_position_list = []
+    for l in range(Iteration_number_per_core):
         if(l != 0 ):
             Initial_angle_new = [ 2 * np.pi * np.random.random() for i in range(dof) ]
             Initial_angle = Initial_angle_new
 
         Initial_action = [float(i) for i in Initial_action]
 
+        Initial_position = Initial_action + Initial_angle
+        initial_position_list .append(Initial_position)
+
+    # only rank 0 will get these data.
+    Eigenvalue_List_in_all_simulation, Singularvalue_List_in_all_simulation, random_action_list, random_angle_list = Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian_submodule(Iterate_number, Iteration_number_per_core, dof, initial_position_list  , parameter_list, folder_path, Period )
+
+    Initial_angle_for_largest_eigenvalue = []
+    Initial_action_for_largest_eigenvalue = []
+    Largest_Eigenvalue_List= []
+    Largest_Singularvalue_List = []
+    if(rank == 0):
+        # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
+        min_nonzero_len = 100000
+        for i in range(Iterate_number):
+            nonzero_len = len([i for i in Eigenvalue_List_in_all_simulation[i][0] if i != 0])
+            if (min_nonzero_len > nonzero_len):
+                min_nonzero_len = nonzero_len
+
+        Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:, :, :min_nonzero_len]
+        Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, :, :min_nonzero_len]
+
+        Time_step = Time_step[:min_nonzero_len]
+
+        # -----------------------------------------------------------
+
+        # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
+        index_for_largest_lypunov = 0
+        Largest_Lypunov_exponent_in_all_simulation = 0
+        for i in range(Iterate_number):
+            Largest_Lyapunov_exponent = np.log(Eigenvalue_List_in_all_simulation[i][0][-1]) / (2 * Time_step[-1])
+            if (Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
+                Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
+                Initial_angle_for_largest_eigenvalue = random_angle_list[i]
+                Initial_action_for_largest_eigenvalue = random_action_list[i]
+                Largest_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
+                Largest_Singularvalue_List = Singularvalue_List_in_all_simulation[i]
+
+        Singular_value_list = Largest_Singularvalue_List
+        Eigen_value_list = Largest_Eigenvalue_List
+
+        print('initial action')
+        print(Initial_action_for_largest_eigenvalue)
+        Initial_angle = Initial_angle_for_largest_eigenvalue
+        print('initial angle:')
+        print(Initial_angle)
+
+        # plot largest eigenvalue
+        fig, ax = plt.subplots(nrows=1, ncols=1)
+        for i in range(2 * dof):
+            ax.plot(np.array(Time_step), Eigen_value_list[i],
+                    label='Eigenvalue ' + str(i + 1) + " for $M^{2}$ ")
+
+        ax.legend(loc='best')
+        ax.set_xlabel('t(ps)')
+
+        # ax.set_xscale('log')
+        ax.set_yscale('log')
+
+        # plot largest singlar value
+        fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+        for i in range(2 * dof):
+            ax1.plot(np.array(Time_step), Singular_value_list[i],
+                     label='Singular value ' + str(i + 1) + ' for M')
+        ax1.legend(loc='best')
+        ax1.set_xlabel('t(ps)')
+
+        # ax1.set_xscale('log')
+        ax1.set_yscale('log')
+
+        # plot average result over angle in torus
+        fig3, ax3 = plt.subplots(nrows=1, ncols=1)
+
+        Average_Eigenvalue_list = np.mean(Eigenvalue_List_in_all_simulation, 0)
+        Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation, 0)
+
+        for i in range(2 * dof):
+            ax3.plot(np.array(Time_step), Average_Eigenvalue_list[i],
+                     label='Average Eigenvalue ' + str(i + 1) + " for $M^{2}$ ")
+
+        ax3.set_xlabel('t(ps)')
+        ax3.set_ylabel('Average Eigenvalue')
+
+        ax3.set_title('Average Eigenvalue')
+
+        # ax3.legend(loc = 'best')
+        ax3.set_yscale('log')
+
+        # save the result
+        file_path = os.path.join(folder_path, "Average_Eigenvalue_for_chaotic_regime.txt")
+        f = open(file_path, "w")
+        f.write(str(dof) + "\n")
+        Data_len = len(Time_step)
+        for i in range(Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+
+        for i in range(dof * 2):
+            for j in range(Data_len):
+                f.write(str(Average_Eigenvalue_list[i][j]) + " ")
+            f.write("\n")
+
+        f.close()
+
+        file_path1 = os.path.join(folder_path, "Largest_Eigenvalue_for_chaotic_regime.txt")
+        f = open(file_path1, "w")
+        f.write(str(dof) + "\n")
+        Data_len = len(Time_step)
+        for i in range(Data_len):
+            f.write(str(Time_step[i] / Period) + " ")
+        f.write("\n")
+
+        for i in range(dof * 2):
+            for j in range(Data_len):
+                f.write(str(Largest_Eigenvalue_List[i][j]) + " ")
+            f.write("\n")
+
+        f.close()
+
+        file_path2 = os.path.join(folder_path, "action and angle.txt")
+        with open(file_path2, "w") as f:
+            f.write('angle for largest Lyapunov exponent')
+            f.write('\n')
+            f.write(str(Initial_angle_for_largest_eigenvalue))
+            f.write('\n')
+            f.write('action for largest Lyapunov exponent')
+            f.write('\n')
+            f.write(str(Initial_action_for_largest_eigenvalue))
+            f.write('\n')
+            f.write('all angle and action : ')
+            for i in range(Iterate_number):
+                f.write(str(random_angle_list[i]))
+                f.write('\n')
+                f.write(str(random_action_list[i]))
+                f.write('\n')
+                f.write('\n')
+
+
+        plt.show()
+
+def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian_submodule(Iterate_number , Iteration_number_per_core , dof, initial_position_list ,
+                                                                  parameter_list , folder_path, Period ):
+
+    [Time_step, frequency, Coefficient, nquanta_list] = parameter_list
+
+    random_angle_list = []
+    random_action_list = []
+
+    Eigenvalue_List_in_all_simulation = []
+    Singularvalue_List_in_all_simulation = []
+    Largest_Lypunov_exponent_in_all_simulation = 0
+
+    Time_step_len = len(Time_step)
+
+    for l in range(Iteration_number_per_core):
+
+        Initial_position = initial_position_list[l]
+        Initial_action = Initial_position[:dof]
+        Initial_angle = Initial_position[dof:]
+
+        Initial_action = [float(i) for i in Initial_action]
+
         random_angle_list.append(Initial_angle)
         random_action_list.append(Initial_action)
 
-        Initial_position = Initial_action + Initial_angle
+
 
         # sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
         _, sol, finish_simulation = Evolve_dynamics_Realistic_SCCL2_BS_method(Initial_position,Time_step, frequency, Coefficient,
@@ -851,6 +1004,11 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     comm.Gather(random_angle_list, recv_angle_list , 0)
     comm.Gather(random_action_list, recv_action_list, 0)
 
+    random_action_list = []
+    random_angle_list = []
+    Eigenvalue_List_in_all_simulation  = []
+    Singularvalue_List_in_all_simulation = []
+
     if (rank == 0):
         # convert recved data to original format
         # Now shape [iterate_number , 2 * dof,  Time_step_len ]
@@ -875,133 +1033,7 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
                                         (recv_action_list_shape[0] * recv_action_list_shape[1] , recv_action_list_shape[2])
                                         )
 
-        # -----Now we have to cut the array because we fill in 0 for time where results below up. --------
-        min_nonzero_len = 100000
-        for i in range(Iterate_number):
-            nonzero_len = len ( [ i for i in  Eigenvalue_List_in_all_simulation[i][0] if i!=0 ])
-            if(min_nonzero_len > nonzero_len):
-                min_nonzero_len = nonzero_len
-
-        Eigenvalue_List_in_all_simulation = Eigenvalue_List_in_all_simulation[:,:,:min_nonzero_len]
-        Singularvalue_List_in_all_simulation = Singularvalue_List_in_all_simulation[:, : ,:min_nonzero_len ]
-
-        Time_step = Time_step [:min_nonzero_len]
-
-        # -----------------------------------------------------------
-
-        # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
-        index_for_largest_lypunov = 0
-        Largest_Lypunov_exponent_in_all_simulation = 0
-        for i in range(Iterate_number):
-            Largest_Lyapunov_exponent = np.log(Eigenvalue_List_in_all_simulation[i][0][-1]) / (2 * Time_step[-1])
-            if(Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
-                Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
-                Initial_angle_for_largest_eigenvalue = random_angle_list[i]
-                Initial_action_for_largest_eigenvalue = random_action_list[i]
-                Largest_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
-                Largest_Singularvalue_List = Singularvalue_List_in_all_simulation[i]
-
-        Singular_value_list = Largest_Singularvalue_List
-        Eigen_value_list = Largest_Eigenvalue_List
-
-        print('initial action')
-        print(Initial_action_for_largest_eigenvalue)
-        Initial_angle = Initial_angle_for_largest_eigenvalue
-        print('initial angle:')
-        print(Initial_angle)
-
-        # plot largest eigenvalue
-        fig, ax = plt.subplots(nrows=1, ncols=1)
-        for i in range(2 * dof):
-            ax.plot(np.array(Time_step), Eigen_value_list[i],
-                    label='Eigenvalue ' + str(i + 1) + " for $M^{2}$ ")
-
-        ax.legend(loc='best')
-        ax.set_xlabel('t(ps)')
-
-        # ax.set_xscale('log')
-        ax.set_yscale('log')
-
-        # plot largest singlar value
-        fig1, ax1 = plt.subplots(nrows=1, ncols=1)
-        for i in range(2 * dof):
-            ax1.plot(np.array(Time_step), Singular_value_list[i],
-                     label='Singular value ' + str(i + 1) + ' for M')
-        ax1.legend(loc='best')
-        ax1.set_xlabel('t(ps)')
-
-        # ax1.set_xscale('log')
-        ax1.set_yscale('log')
-
-        # plot average result over angle in torus
-        fig3, ax3 = plt.subplots(nrows=1,ncols=1)
-
-        Average_Eigenvalue_list = np.mean(Eigenvalue_List_in_all_simulation,0)
-        Average_Singular_value_list = np.mean(Singularvalue_List_in_all_simulation,0)
-
-        for i in range( 2*dof):
-            ax3.plot(np.array(Time_step), Average_Eigenvalue_list[i], label='Average Eigenvalue ' + str(i+1)+" for $M^{2}$ ")
-
-        ax3.set_xlabel('t(ps)')
-        ax3.set_ylabel('Average Eigenvalue')
-
-        ax3.set_title('Average Eigenvalue')
-
-        # ax3.legend(loc = 'best')
-        ax3.set_yscale('log')
-
-
-
-        # save the result
-        file_path = os.path.join(folder_path, "Average_Eigenvalue_for_chaotic_regime.txt")
-        f = open(file_path, "w")
-        f.write(str(dof) + "\n")
-        Data_len = len(Time_step)
-        for i in range(Data_len):
-            f.write(str(Time_step[i] / Period) + " ")
-        f.write("\n")
-
-        for i in range(dof * 2):
-            for j in range(Data_len):
-                f.write(str(Average_Eigenvalue_list[i][j]) + " ")
-            f.write("\n")
-
-        f.close()
-
-        file_path1 = os.path.join(folder_path, "Largest_Eigenvalue_for_chaotic_regime.txt")
-        f = open(file_path1, "w")
-        f.write(str(dof) + "\n")
-        Data_len = len(Time_step)
-        for i in range(Data_len):
-            f.write(str(Time_step[i] / Period) + " ")
-        f.write("\n")
-
-        for i in range(dof * 2):
-            for j in range(Data_len):
-                f.write(str(Largest_Eigenvalue_List[i][j]) + " ")
-            f.write("\n")
-
-        f.close()
-
-        file_path2 = os.path.join(folder_path, "action and angle.txt")
-        with open(file_path2,"w") as f:
-            f.write('angle for largest Lyapunov exponent')
-            f.write('\n')
-            f.write(str(Initial_angle_for_largest_eigenvalue))
-            f.write('\n')
-            f.write('action for largest Lyapunov exponent')
-            f.write('\n')
-            f.write(str(Initial_action_for_largest_eigenvalue))
-            f.write('\n')
-            f.write('all angle and action : ')
-            for i in range(Iterate_number):
-                f.write(str(random_angle_list[i]))
-                f.write('\n')
-                f.write(str(random_action_list[i]))
-                f.write('\n')
-                f.write('\n')
-
-    plt.show()
+    return Eigenvalue_List_in_all_simulation, Singularvalue_List_in_all_simulation, random_action_list, random_angle_list
 
 
 def Plot_Trajectory_Other_Molecules():
@@ -1093,7 +1125,7 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     Coefficient = np.array(Coefficient) * 1
 
     dof = 6
-    final_time = 0.1
+    final_time = 0.02
 
     Time_step = np.linspace(0, final_time, 1000)
 
@@ -1103,7 +1135,7 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     phase_jitter = 0.001
     action_jitter = 0.001
 
-    Initial_action = [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
+    Initial_action = [6, 5, 1, 3, 5 ,3 ]
     # Initial_action = [3 ,3 ,3 ,2 ,2 ,2  ]
     # Initial_action = [2 , 1 , 2 , 1 ,2 ,3 ]
     # Initial_action1 = [2, 2, 3, 3, 3 + action_jitter, 2]
@@ -1118,7 +1150,7 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     for i in range(Iteration_number):
         # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
-        Initial_angle = [31, 6.1, 8.84, 16.536, 20.22, 14.1]
+        Initial_angle = [6.0252938 , 3.91642767 ,4.68152349 ,3.77998479 ,2.9231359 , 3.47953764]
 
         # Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479 ,2.9231359,  3.47953764]
         # for j in range(dof):
@@ -1162,7 +1194,21 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
         ax.plot(Time_step, sol[:,i] , label = 'J ' + str(i+1) + ' (t)')
     ax.legend(loc = 'best')
     ax.set_xlabel('t (ps)')
-    ax.set_yscale('log')
+    # ax.set_yscale('log')
+
+    # plot conjectured conserved quantity
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+    conserved_quantity_index = [ [1,1,0,0,1,0] ,[2,0,1,0,1,1] , [0,0,0,1,0,0] ]
+    conserved_quantity_list = []
+    sol_trans = np.transpose(sol)
+    action = np.transpose(sol_trans[:dof])
+    for i in range(len(conserved_quantity_index)):
+        index = conserved_quantity_index[i]
+        conserved_quantity = np.sum(index * action, 1)
+        conserved_quantity_list.append(conserved_quantity)
+        ax1.plot(Time_step, conserved_quantity, label = str(index))
+    ax1.legend(loc = 'best')
+    ax1.set_xlabel('t (ps)')
 
     fig2, ax2 = plt.subplots(nrows=3, ncols=1)
 
@@ -1330,6 +1376,7 @@ def Sample_SCCL2_Realistic_Hamiltonian_angular_velocity():
     print('optimal angle:  ')
     print(optimal_angle)
     print('nquanta for combination   ' + str(nquanta_for_combination_optimal))
+
 
 def compute_min_abs_angle_velocity_combination(angle_velocity, nquanta_list,Coefficient):
     dof = len(angle_velocity)
