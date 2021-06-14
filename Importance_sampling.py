@@ -76,7 +76,7 @@ def compute_average_FLI( initial_position_list  ,Dynamical_function, dynamical_a
 
     average_FLI = np.mean(FLI_list)
 
-    return average_FLI
+    return average_FLI , FLI_list
 
 def Compute_chaotic_center_radius( center_position,  criteria_max  , change_action_bool ,
                                    Dynamic_function, dynamic_argument , Time_step):
@@ -89,8 +89,8 @@ def Compute_chaotic_center_radius( center_position,  criteria_max  , change_acti
     :return:
     '''
     dof = int( len(center_position) / 2 )
-    radius = 0.5
-    sample_number = 5
+    radius = 2 * np.pi
+    sample_number = 10
 
     initial_action = center_position[:dof]
     initial_angle = center_position[dof:]
@@ -101,19 +101,22 @@ def Compute_chaotic_center_radius( center_position,  criteria_max  , change_acti
         position_list = []
         for i in range(sample_number):
             if(change_action_bool):
-                random_number = np.random.normal(0, radius, 2 * dof )
+                random_number = (np.random.random(2 * dof)  - 0.5) * 2 * radius
                 new_position = center_position + random_number
             else:
-                random_number = np.random.normal(0, radius, dof)
+                random_number = (np.random.random(dof)  - 0.5) * 2 * radius
                 new_angle = initial_angle + random_number
                 new_position = np.concatenate( (initial_action, new_angle) )
 
             position_list.append(new_position)
 
-        average_FLI = compute_average_FLI(position_list, Dynamic_function, dynamic_argument, Time_step)
+        average_FLI , FLI_list= compute_average_FLI(position_list, Dynamic_function, dynamic_argument, Time_step)
         if(average_FLI < center_position_FLI * criteria_max ):
             radius = radius / 2
         else:
+            print("center FLI : " + str(center_position_FLI))
+            print("average FLI:  " + str(average_FLI))
+            print("FLI list:  " + str(FLI_list))
             break
 
     return radius

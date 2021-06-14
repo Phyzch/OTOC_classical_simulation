@@ -626,11 +626,12 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     # Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
 
     Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
-    Initial_action = [6.443361389024258 , 5.498726499017275 , 0.004483104899902918 , 3.4899575407048666 , 5.33742376176894 , 2.4610551812380934    ]
+    Initial_action = [6.443361389024258 , 5.498726499017275 , 0.004483104899902918 , 3.4899575407048666 , 5.33742376176894 , 2.4610551812380934   ]
 
 
     # Initial_angle = [-0.14605803 ,-2.90979072,  5.548222 ,  -4.13046123  ,3.03059037 ,-4.14587365]
-    Initial_angle = [6.187856532830749 , 3.0831171845949323 , 5.3885555263307054 , 5.343595874871913 , 2.7022494924080744 , 2.2882731849628586  ]
+    Initial_angle = [6.187856532830749 , 3.0831171845949323 , 5.3885555263307054 , 5.343595874871913 , 2.7022494924080744 , 2.2882731849628586]
+    center_angle = Initial_angle
     # Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
 
     Iteration_number_per_core = int(Iterate_number / num_proc)
@@ -640,8 +641,10 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
 
     initial_position_list = []
     for l in range(Iteration_number_per_core):
-        if(l != 0 ):
-            Initial_angle_new = [ 2 * np.pi * np.random.random() for i in range(dof) ]
+        if(l != 0 or rank != 0 ):
+            # Initial_angle_new = [ 2 * np.pi * np.random.random() for i in range(dof) ]
+            Initial_angle_new = np.array(center_angle) + np.array([ np.pi * (np.random.random()-0.5) for i in range(dof)])
+            Initial_angle_new = Initial_angle_new.tolist()
             Initial_angle = Initial_angle_new
 
         Initial_action = [float(i) for i in Initial_action]
@@ -1116,13 +1119,68 @@ def Plot_Trajectory_Other_Molecules():
     # ax3[0].set_ylim([-400,400])
     # ax3[1].set_ylim([-400,400])
 
+def Plot_Multiple_trajectory_SCCL2_Realistic_Hamiltonian():
+    matplotlib.rcParams.update({'font.size': 20})
+    frequency, Coefficient, nquanta_list = Read_Realistic_SCCL2()
 
+    Coefficient = np.array(Coefficient)
+
+    dof = 6
+    final_time = 0.02
+    Time_step_len = 100
+    Time_step = np.linspace(0, final_time, Time_step_len)
+
+
+    initial_action_list = []
+    initial_angle_list = []
+
+    initial_action1 = [6, 5, 1, 3, 5, 3]
+    initial_angle1 = [6.0252938,  3.91642767, 4.68152349, 3.77998479, 2.9231359 , 3.47953764]
+    initial_action_list.append(initial_action1)
+    initial_angle_list.append(initial_angle1)
+
+    initial_action2 = [6.4434 , 5.4987 , 0.004483 , 3.48996 , 5.3374 , 2.461  ]
+    initial_angle2 = [6.18785653 ,3.08311718, 5.38855553, 5.34359587, 2.70224949, 2.28827318]
+    initial_action_list.append(initial_action2)
+    initial_angle_list.append(initial_angle2)
+
+    initial_action3 = [6, 5, 1, 3, 5 ,3 ]
+    initial_angle3 = [5.55370451, 0.02425863, 5.04619891, 0.35696992, 1.91216829, 1.78723057]
+    initial_action_list.append(initial_action3)
+    initial_angle_list.append(initial_angle3)
+
+    iter_num = len(initial_action_list)
+
+    # [num_trajector, dof, time]
+    sol_list = []
+    for i in range(iter_num):
+        initial_action = initial_action_list[i]
+        initial_angle = initial_angle_list[i]
+
+        initial_position = initial_action + initial_angle
+        _, sol, _ = Evolve_dynamics_Realistic_SCCL2_BS_method(initial_position,Time_step, frequency, Coefficient,
+                                                                              nquanta_list)
+        sol = sol[:Time_step_len]
+        sol = np.transpose(sol)
+        sol_list.append(sol)
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    dimension_index = 5
+    for i in range(iter_num):
+        sol = sol_list[i-1]
+        ax.plot(Time_step, sol[1] , label = ' action :  '+ str(  np.round(initial_action_list[i] , 3)  )
+                + "\n angle : " + str(np.round(initial_angle_list[i] , 3 )))
+    ax.legend(loc = 'best')
+    ax.set_xlabel('t(ps)')
+    ax.set_ylabel('action J ' + str(dimension_index))
+
+    plt.show()
 
 def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
     frequency, Coefficient, nquanta_list = Read_Realistic_SCCL2()
 
-    Coefficient = np.array(Coefficient) * 1
+    Coefficient = np.array(Coefficient)
 
     dof = 6
     final_time = 0.02
@@ -1131,12 +1189,9 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
     Iteration_number = 1
 
-    # specify initial position and angle
-    phase_jitter = 0.001
-    action_jitter = 0.001
 
-    Initial_action = [6, 5, 1, 3, 5 ,3 ]
-    # Initial_action = [3 ,3 ,3 ,2 ,2 ,2  ]
+    # Initial_action = [6, 5, 1, 3, 5 ,3 ]
+    Initial_action = [6, 5, 1, 3, 5, 3]
     # Initial_action = [2 , 1 , 2 , 1 ,2 ,3 ]
     # Initial_action1 = [2, 2, 3, 3, 3 + action_jitter, 2]
 
@@ -1147,47 +1202,21 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     Initial_angle_list = []
 
 
-    for i in range(Iteration_number):
-        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
-        Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479, 2.9231359 , 3.47953764]
+    # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+    Initial_angle = [6.0252938,  3.91642767, 4.68152349, 3.77998479, 2.9231359 , 3.47953764]
+    # Initial_angle = [5.55370451, 0.02425863, 5.04619891, 0.35696992, 1.91216829, 1.78723057]
 
-        # Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479 ,2.9231359,  3.47953764]
-        # for j in range(dof):
-        #     Initial_angle[j] = (0.02 * (np.random.random()-0.5) * 2 +1) * Initial_angle[j]
+    Initial_angle_list.append(Initial_angle)
+    print(Initial_angle)
 
-        Initial_angle_list.append(Initial_angle)
-        print(Initial_angle)
-        # print('initial angle:' + str(Initial_angle1))
+    Initial_position = Initial_action + Initial_angle
 
-        Initial_position = Initial_action + Initial_angle
+    # solve dynamics
+    sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
 
-        # solve dynamics
-        sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position,Time_step,frequency,Coefficient,nquanta_list)
-
-        # sol = Evolve_dynamics_SCCL2_Realistic_Hamiltonian_back_in_time(Initial_position,Time_step,frequency, Coefficient, nquanta_list)
-
-        max_action = np.max( [sol[:][i] for i in range(dof)] )
-
-        # Initial_angle1 = Initial_angle
-        # Initial_position1 = Initial_action1 + Initial_angle1
-        # sol1 = Evolve_dynamics_SCCL2_Realistic_Hamiltonian(Initial_position1, Time_step, frequency, Coefficient,
-        #                                                    nquanta_list)
-        #
-        # Sol_diff = np.array(sol1) - np.array(sol)
-        #
-        # max_action = np.max([ max(Sol_diff[:][i]) for i in range(dof)])
-        if(max_action > max_action_in_all_simulation):
-            max_action_in_all_simulation = max_action
-            max_sol = sol
-            # max_Sol_diff = Sol_diff
-            Index = i
 
     print('Initial angle: ' + str(Initial_angle_list[Index]))
-    sol = max_sol
-    Sol_diff = max_Sol_diff
-
-    Period = 0.03
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     for i in range(dof):
@@ -1195,20 +1224,6 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     ax.legend(loc = 'best')
     ax.set_xlabel('t (ps)')
     # ax.set_yscale('log')
-
-    # plot conjectured conserved quantity
-    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
-    conserved_quantity_index = [ [1,1,0,0,1,0] ,[2,0,1,0,1,1] , [0,0,0,1,0,0] ]
-    conserved_quantity_list = []
-    sol_trans = np.transpose(sol)
-    action = np.transpose(sol_trans[:dof])
-    for i in range(len(conserved_quantity_index)):
-        index = conserved_quantity_index[i]
-        conserved_quantity = np.sum(index * action, 1)
-        conserved_quantity_list.append(conserved_quantity)
-        ax1.plot(Time_step, conserved_quantity, label = str(index))
-    ax1.legend(loc = 'best')
-    ax1.set_xlabel('t (ps)')
 
     fig2, ax2 = plt.subplots(nrows=3, ncols=1)
 
@@ -1261,6 +1276,26 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
     ax3[0].set_xlabel('t (ps)')
     ax3[1].set_xlabel('t (ps)')
     ax3[2].set_xlabel('t (ps)')
+
+
+    # plot conjectured conserved quantity
+    # velocity for angle: v5 - v6 - v2
+    velocity_diff = angle_velocity_list[4] - angle_velocity_list[5] - angle_velocity_list[1]
+    fig1, ax1 = plt.subplots(nrows=2, ncols=1)
+    ax1[0].plot(Time_step, velocity_diff * cf , label = '$\omega_{5} - \omega_{6} - \omega_{2} $')
+    ax1[0].legend(loc = 'best ')
+    ax1[0].set_xlabel('t(ps)')
+
+    # \theta_{5} - \theta_{6} - \theta_{2}
+    angle_diff = sol[:, 4 + dof] - sol[:, 5 + dof] - sol[:, 1 + dof ]
+    ax1[1].plot(Time_step, angle_diff, label = '$\phi_{5} - \phi_{6} - \phi_{2}$')
+
+    # \theta[1] - 2 * \theta[5]
+    angle_diff = sol[:, dof ] - 2 * sol[: , 4 + dof]
+    ax1[1].plot(Time_step, angle_diff, label='$\phi_{1} - 2 * \phi_{2}$')
+
+    ax1[1].set_xlabel('t(ps)')
+    ax1[1].legend(loc = 'best')
 
     sol_transpose = np.transpose(sol)
     for i in range(dof):

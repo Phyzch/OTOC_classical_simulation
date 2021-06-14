@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from SCCL2_potential import Read_Realistic_SCCL2
 from Evolve_dynamics import SCCL2_Realistic_Hamiltonian
 from Evolve_dynamics_Using_Bulirsch import Evolve_dynamics_Realistic_SCCL2_BS_method
+from Importance_sampling import Compute_chaotic_center_radius
 import os
 
 class Clone:
@@ -187,9 +188,26 @@ def Lyapunov_weighted_path( initial_num, max_num, iter_time , initial_action , o
 
     plt.show()
 
+def Estimate_chaotic_center_radius(center_position):
+    criteria_max = 1
+    change_action_bool = False
+    Dynamical_function = SCCL2_Realistic_Hamiltonian
+    frequency, Coefficient, nquanta_list = Read_Realistic_SCCL2()
+    dynamic_argument = (frequency, Coefficient, nquanta_list)
+    final_time = 0.02
+    Time_step_len = 100
+    Time_step = np.linspace(0, final_time, Time_step_len)
+
+    radius = Compute_chaotic_center_radius(center_position, criteria_max, change_action_bool, Dynamical_function, dynamic_argument, Time_step)
+    print("radius for chaotic center : " + str(radius))
+
 initial_num = 200
 max_num = 5000
 iter_num = 50
 initial_action = [6, 5, 1, 3, 5 ,3 ]
 output_file_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Lyapunov weighted path/"
 # Lyapunov_weighted_path(initial_num,max_num,iter_num, initial_action, output_file_path)
+center_position = [6.443361389024258 , 5.498726499017275 , 0.004483104899902918 , 3.4899575407048666 , 5.33742376176894 , 2.4610551812380934 ,
+                   6.187856532830749 , 3.0831171845949323 , 5.3885555263307054 , 5.343595874871913 , 2.7022494924080744 , 2.2882731849628586]
+
+# Estimate_chaotic_center_radius(center_position)
