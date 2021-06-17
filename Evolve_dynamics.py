@@ -83,6 +83,11 @@ def SCCL2_Realistic_Hamiltonian(y,t,frequency, Coefficient, nquanta_list):
 
     return dydt
 
+def SCCL2_Realistic_Hamiltonian_back_in_time(y,t,frequency,Coefficient,nquanta_list):
+    dydt = SCCL2_Realistic_Hamiltonian(y,t,frequency,Coefficient,nquanta_list)
+    return -dydt
+
+
 def Evolve_dynamics(Initial_position, Time_step, frequency, V_phi, D, Tuple_list):
     '''
     :return: sol: [len(t), len(y0)], [:,0]: action 0. [:,1] : action1.  [:,6] : angle 0. ...

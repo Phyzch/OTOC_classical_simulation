@@ -52,13 +52,7 @@ def Compute_fast_Lyapunov_indicator(initial_position , Dynamic_function, Time_st
     # we know dv/dt = \partial F /\partial x  * v
     # F(x) is velocity of field x, thus is given by Dynamic_function(position[time] , time, *dynamic_argument)
     # F_list is F(x) we should compute \partial F / \partial x for evolution of velocity
-    F_list = []
     time_len = len(time)
-    for i in range(time_len):
-        F = Dynamic_function(position[i] , time[i] , *dynamic_argument )
-        F_list.append(F)
-
-    F_list = np.array(F_list)
 
     tangent_vector_list = []
     tangent_vector = np.copy( np.array(initial_tangent_vector) )

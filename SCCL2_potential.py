@@ -90,9 +90,10 @@ def Other_molecule_angle_velocity(action, angle, V0,  scaling_parameter, frequen
 
     # add anharmonicity
     Omega_list = []
-    D = 10000
+    D = 30000
     for i in range(dof):
         Omega = frequency[i]
+
         Omega_list.append(Omega)
 
 

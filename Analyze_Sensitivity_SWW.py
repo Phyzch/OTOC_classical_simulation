@@ -19,7 +19,7 @@ def Plot_Trajectory_SWW():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 7
+    V_phi = 60
     # V_phi = 0
 
     dof = 6
@@ -28,13 +28,13 @@ def Plot_Trajectory_SWW():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 10
+    final_time = 0.1
 
     Time_step = np.linspace(0,final_time,100)
 
     Initial_action = [2,2,3,3,3,2]
     Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
-    # Initial_angle1 = [1.26902252, 0.56623613, 0.12324133, 3.25980214, 0.11200997, 0.10889953]
+    Initial_angle1 = [5.65687247, 5.5585484 , 2.19224839 ,4.01871328 ,2.19238969, 3.47430044]
 
     print('initial angle:')
     print(Initial_angle1)
@@ -348,7 +348,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     # This term tune the chaos
     # V_phi = 75.7
-    V_phi = 7
+    V_phi = 60
 
     dof = 6
 
@@ -356,7 +356,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])  # in unit of cm^{-1}
 
-    final_time = 5
+    final_time = 0.05
 
     Time_step_len = 1000
 
@@ -396,8 +396,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     for iter_index in range(Iteration_number_per_core):
 
-        Initial_angle = [3.57317253, 4.02565235, 0.86191399, 4.04550951, 3.57043839, 0.88735252]
-        # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+        Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
 
         # random_number = std_for_xp * np.random.normal(0, std_for_xp, 2 * dof)
         # x = coherent_state_x + random_number[:dof]
@@ -588,15 +587,25 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
         print("random action received : " + str(random_action_list) )
         # Now compute Largest Singular_value_list and Largest_eigenvalue_list and Largest Lyapunov_exponent_list and their initial angles.
         Largest_Lypunov_exponent_in_all_simulation = 0
+        Minimum_Lyapunov_exponent_in_all_simulation = 10000000
+        Initial_angle_for_smallest_eigenvalue = []
+        Initial_action_for_smallest_eigenvalue = []
         Initial_action_for_largest_eigenvalue = []
+        Minimum_Eigenvalue_List = []
         for i in range(Iterate_number):
             Largest_Lyapunov_exponent = np.log(Eigenvalue_List_in_all_simulation[i][0][-1]) / (2 * Time_step[-1])
+
             if (Largest_Lyapunov_exponent > Largest_Lypunov_exponent_in_all_simulation):
                 Largest_Lypunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
                 Initial_angle_for_largest_eigenvalue = random_angle_list[i]
                 Initial_action_for_largest_eigenvalue = random_action_list[i]
                 Largest_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
                 Largest_Singularvalue_List = Singularvalue_List_in_all_simulation[i]
+            if(Largest_Lyapunov_exponent < Minimum_Lyapunov_exponent_in_all_simulation):
+                Minimum_Lyapunov_exponent_in_all_simulation = Largest_Lyapunov_exponent
+                Initial_angle_for_smallest_eigenvalue = random_angle_list[i]
+                Initial_action_for_smallest_eigenvalue = random_action_list[i]
+                Minimum_Eigenvalue_List = Eigenvalue_List_in_all_simulation[i]
 
         Singular_value_list = Largest_Singularvalue_List
         Eigen_value_list = Largest_Eigenvalue_List
@@ -738,6 +747,19 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
             f.write("\n")
 
         f.close()
+
+        file_path1 = os.path.join(folder_path , "Minimum_Eigenvalue_for_chaotic_regime.txt")
+        with open(file_path1, "w") as f:
+            f.write(str(dof) + "\n")
+            Data_len = len(Time_step)
+            for i in range(Data_len):
+                f.write(str(Time_step[i] / Period) + " ")
+            f.write("\n")
+            for i in range(dof * 2):
+                for j in range(Data_len):
+                    f.write(str(Minimum_Eigenvalue_List[i][j]) + " ")
+                f.write("\n")
+
 
         file_path2 = os.path.join(folder_path, "Largest_angle.txt")
         f = open(file_path2, "w")

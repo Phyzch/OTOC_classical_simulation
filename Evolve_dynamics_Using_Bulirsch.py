@@ -1,7 +1,7 @@
 import numpy as np
 from SCCL2_potential import Generate_n_quanta_list_for_SCCL2
 from Bulirsch_Stoer_module import bulStoer
-from Evolve_dynamics import Other_Molecules , SCCL2_Realistic_Hamiltonian , anharmonic_oscillator
+from Evolve_dynamics import Other_Molecules , SCCL2_Realistic_Hamiltonian , SCCL2_Realistic_Hamiltonian_back_in_time, anharmonic_oscillator
 import matplotlib.pyplot as plt
 import matplotlib
 import os
@@ -21,6 +21,22 @@ def Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0, sc
 
 
     return time, position , finish_simulation
+
+def Evolve_dynamics_Realistic_SCCL2_BS_method_back_in_time(Initial_position, Time_step, frequency, Coefficient, nquanta_list):
+    t0 = 0
+    time_step_size = Time_step[1]
+
+    final_time = Time_step[-1]
+
+    Initial_position = np.array(Initial_position)
+
+    tol = 1e-6
+
+    time, position, finish_simulation = bulStoer(SCCL2_Realistic_Hamiltonian_back_in_time, t0, Initial_position, final_time,
+                                                 time_step_size, args=(frequency, Coefficient, nquanta_list), tol=tol)
+
+    return time, position, finish_simulation
+
 
 def Evolve_dynamics_Realistic_SCCL2_BS_method(Initial_position, Time_step, frequency, Coefficient, nquanta_list):
     t0 = 0
