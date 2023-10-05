@@ -98,8 +98,8 @@ def compute_angle_velocity(frequency,action, angle, D, V_phi , Tuple_list):
     # integrable part
     Omega_list = []
     for i in range(dof):
-        Omega = frequency[i] - pow(frequency[i],2) / (2*D)  * action[i]
-        # Omega = frequency[i]
+        # Omega = frequency[i] - pow(frequency[i],2) / (2*D)  * action[i]
+        Omega = frequency[i]
         Omega_list.append(Omega)
 
     # contribution from V:
@@ -141,7 +141,7 @@ def compute_action_velocity(V_phi,action,angle,Tuple_list):
     '''
     dof = len(action)
 
-
+    # [dof, list_len]
     Tuple_list_trans = np.transpose(Tuple_list)
 
     coupling_scaling = 2 * np.sqrt(action) * np.cos(angle)

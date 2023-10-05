@@ -207,6 +207,8 @@ iter_num = 50
 initial_action = [6, 5, 1, 3, 5 ,3 ]
 output_file_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Lyapunov weighted path/"
 # Lyapunov_weighted_path(initial_num,max_num,iter_num, initial_action, output_file_path)
+
+
 center_position = [6.443361389024258 , 5.498726499017275 , 0.004483104899902918 , 3.4899575407048666 , 5.33742376176894 , 2.4610551812380934 ,
                    6.187856532830749 , 3.0831171845949323 , 5.3885555263307054 , 5.343595874871913 , 2.7022494924080744 , 2.2882731849628586]
 

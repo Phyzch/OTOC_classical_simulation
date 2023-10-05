@@ -155,7 +155,8 @@ def importance_sampling_compute_Lyapunov_spectrum(folder_path):
     change_action_bool = False
     initial_action = [6 , 5 ,1, 3, 5 ,3 ]
 
-    center_number, center_lyapunov_exponent_list , center_position_list , radius_list = compute_center_position_and_radius_SCCL2(folder_path, change_action_bool)
+    center_number, center_lyapunov_exponent_list , center_position_list , radius_list = \
+        compute_center_position_and_radius_SCCL2(folder_path, change_action_bool)
 
     dof = int ( len(center_position_list[0]) / 2 )
     Iteration_number = 20
@@ -193,7 +194,7 @@ def importance_sampling_compute_Lyapunov_spectrum(folder_path):
 
         else:
             random_number = random_number - 0.5
-            # random_number / ( 1 / (2 * center_number)). 1 / (2 * center_number) is prob for eawch chaotic region
+            # random_number / ( 1 / (2 * center_number)). 1 / (2 * center_number) is prob for each chaotic region
             center_index = int ( random_number * 2 * center_number )
             if(center_index == center_number):
                 center_index = center_number - 1

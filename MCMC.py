@@ -46,7 +46,9 @@ def Compute_Potential_for_MCMC(initial_position, simulation_argument):
 
     return potential , sol
 
-def simulate_single_MCMC_trajectory(initial_position,  center_action , region_range , simulation_argument, max_step_number, trial_time_max, jump_distance , temperature , change_action_bool):
+def simulate_single_MCMC_trajectory(initial_position,  center_action , region_range ,
+                                    simulation_argument, max_step_number, trial_time_max,
+                                    jump_distance , temperature , change_action_bool):
     '''
 
     :param initial_position: initial position is the point we start jumping.
@@ -176,21 +178,21 @@ def simulate_single_MCMC_trajectory(initial_position,  center_action , region_ra
 
     return maximum_position, maximum_Lyapunov_exponent , trajectory_length , potential_list, position_list_trans
 
-def MCMC_SCCL2(folder_path):
+def MCMC_SCCL2(folder_path , Initial_action ):
 
     frequency, Coefficient, nquanta_list = Read_Realistic_SCCL2()
     dynamic_argument = (frequency, Coefficient, nquanta_list)
     Dynamical_function = SCCL2_Realistic_Hamiltonian
 
     dof = 6
-    final_time = 0.01
+    final_time = 0.02
 
     Time_step_len = 10
     Time_step = np.linspace(0, final_time, Time_step_len)
 
     simulation_argument = [ Time_step, Dynamical_function, dynamic_argument ]
 
-    Initial_action = [6, 5, 1, 3, 5, 3]
+
     center_action = np.array(Initial_action)
     region_range = 1
 
@@ -198,14 +200,14 @@ def MCMC_SCCL2(folder_path):
     # Initial_angle = [6.0252938 , 3.91642767 ,4.68152349, 3.77998479 ,2.9231359,  3.47953764]
 
     Initial_angle = np.random.random(dof) * 2 * np.pi
-    Initial_angle=Initial_angle.tolist()
+    Initial_angle = Initial_angle.tolist()
 
     max_step_number = 50
     trial_time_max = 20
     jump_distance = 0.1
-    temperature = 1
+    temperature = 0.15
 
-    iteration_number = 20
+    iteration_number = 10
 
     trajectory_length_list = []
     trajectory_potential_list = []
@@ -222,7 +224,7 @@ def MCMC_SCCL2(folder_path):
         Initial_position = Initial_action + Initial_angle
         maximum_position, maximum_Lyapunov_exponent ,  trajectory_length , potential_list, _ = simulate_single_MCMC_trajectory(Initial_position, center_action, region_range, simulation_argument,
                                                                                       max_step_number, trial_time_max, jump_distance, temperature,
-                                                                                      change_action_bool= False)
+                                                                                      change_action_bool= False  )
         maximum_Lyapunov_exponent_list.append(maximum_Lyapunov_exponent)
         maximum_position_list.append(maximum_position)
         trajectory_length_list.append(trajectory_length)
@@ -300,4 +302,8 @@ def MCMC_SCCL2(folder_path):
     return maximum_Lyapunov_exponent_list, maximum_position_list
 
 folder_path = "/home/phyzch/PycharmProjects/OTOC_classical simulation/result/Lyapunov weighted path/try/"
-# MCMC_SCCL2(folder_path)
+
+#Initial_action = [6, 5, 1, 3, 5, 3]
+Initial_action = [3,3,3,2,2,2]
+
+MCMC_SCCL2(folder_path, Initial_action)

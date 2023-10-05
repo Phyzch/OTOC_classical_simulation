@@ -1,0 +1,9 @@
+Consider Jitcode package to speed up ODEINT.
+When using ODEINT, each time we have to evaluate derivative, which call in python is extremely slow. Jitcode can utilize symbolic expression to speed up this.
+See website: 
+https://jitcode.readthedocs.io/en/latest/
+
+https://github.com/neurophysik/jitcode
+
+Or we can try Numba.
+

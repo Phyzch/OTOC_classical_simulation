@@ -17,6 +17,8 @@ def integrate_BulirschStoeir(F, x, y, xStop, tol , args):
             y1 = y2
 
         Result = 0.5*(y1 + y0 + h*F(y1, x , *args))
+
+        # make sure action is > 0.
         dof = int( len(Result ) / 2)
         for i in range(dof):
             if(Result[i] < 0):

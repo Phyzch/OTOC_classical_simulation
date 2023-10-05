@@ -19,8 +19,8 @@ def Plot_Trajectory_SWW():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 60
-    # V_phi = 0
+    # V_phi = 60
+    V_phi = 7
 
     dof = 6
 
@@ -28,13 +28,12 @@ def Plot_Trajectory_SWW():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.1
+    final_time = 3
 
     Time_step = np.linspace(0,final_time,100)
 
     Initial_action = [2,2,3,3,3,2]
     Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
-    Initial_angle1 = [5.65687247, 5.5585484 , 2.19224839 ,4.01871328 ,2.19238969, 3.47430044]
 
     print('initial angle:')
     print(Initial_angle1)
@@ -67,15 +66,15 @@ def Plot_Trajectory_SWW():
 
     # sol1 = Evolve_dynamics(Initial_position,Time_step,frequency,V_phi,D,Tuple_list)
 
-    # fig1, ax1 = plt.subplots(nrows=2,ncols=1)
-    #
-    # for i in range(dof):
-    #     ax1[0].plot(Time_step/Period, sol1[:,i], label = 'J' + str(i) + ' (t)')
-    #     ax1[1].plot(Time_step/Period,sol1[:,i+dof] , label= '$\phi$ '+str(i) + " (t)")
-    # ax1[0].legend(loc='best')
-    # ax1[1].legend(loc='best')
-    # ax1[0].set_xlabel('t/T')
-    # ax1[1].set_xlabel('t/T')
+    fig1, ax1 = plt.subplots(nrows=2,ncols=1)
+
+    for i in range(dof):
+        ax1[0].plot(Time_step, sol[:,i], label = 'J' + str(i) + ' (t)')
+        ax1[1].plot(Time_step,sol[:,i+dof] , label= '$\phi$ '+str(i) + " (t)")
+    ax1[0].legend(loc='best')
+    ax1[1].legend(loc='best')
+    ax1[0].set_xlabel('t(ps)')
+    ax1[1].set_xlabel('t(ps)')
 
     # difference between trajectory
     # Sol_diff = np.array(sol1) - np.array(sol)
@@ -126,16 +125,16 @@ def Plot_Trajectory_SWW():
     angle_velocity_list = np.transpose(angle_velocity_list)
     action_velocity_list = np .transpose(action_velocity_list)
 
-    # for i in range(dof):
-    #     ax3[0].plot(Time_step,  action_velocity_list[i] , label = 'action velocity ' + str(i+1) )
-    #     ax3[1].plot(Time_step, angle_velocity_list[i] , label  = 'angle velocity ' + str(i+1)  )
-    #     ax3[2].plot(Time_step , angle_combination_list, label = ' angle velocity combination 2 + 3  -1 ')
-    #
-    # ax3[0].legend(loc='best')
-    # ax3[1].legend(loc='best')
-    #
-    # ax3[0].set_xlabel('t(ps)')
-    # ax3[1].set_xlabel('t(ps)')
+    for i in range(dof):
+        ax3[0].plot(Time_step,  action_velocity_list[i] , label = 'action velocity ' + str(i+1) )
+        ax3[1].plot(Time_step, angle_velocity_list[i] , label  = 'angle velocity ' + str(i+1)  )
+        ax3[2].plot(Time_step , angle_combination_list, label = ' angle velocity combination 2 + 3  -1 ')
+
+    ax3[0].legend(loc='best')
+    ax3[1].legend(loc='best')
+
+    ax3[0].set_xlabel('t(ps)')
+    ax3[1].set_xlabel('t(ps)')
 
     # ax3[0].set_ylim([-2000,2000])
     # ax3[1].set_ylim([-2000,2000])
@@ -167,7 +166,7 @@ def Analyze_Sensitivity_number_operator():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 251.2
+    V_phi = 7
 
     dof = 6
 
@@ -175,13 +174,13 @@ def Analyze_Sensitivity_number_operator():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.01
+    final_time = 2
 
-    Time_step = np.linspace(0, final_time, 500)
+    Time_step = np.linspace(0, final_time, 100)
 
     Initial_action = [2, 2, 3, 3, 3, 2]
     Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
-
+    # [1.6497094157891214, 1.913649636264694, 0.9584929835407876, 3.385075860821485, 4.307613337174805, 1.4930265451598583]
     print('initial angle:')
     print(Initial_angle1)
 
@@ -235,21 +234,23 @@ def Analyze_Sensitivity_number_operator():
 
     Singular_value_list = np.transpose(Singular_value_list)
 
-    fig, ax = plt.subplots(nrows=2,ncols=1)
-    for i in range(dof):
-        ax[0].plot(np.array(Time_step) / Period ,Singular_value_list[i], label='singular value '+str(i))
-        ax[1].plot(np.array(Time_step) / Period, Singular_value_list[i], label='singular value ' + str(i))
+    fig, ax = plt.subplots(nrows=1,ncols=1)
+    # for i in range(dof):
+    ax.plot(np.array(Time_step) ,Singular_value_list[0], marker = 'o', label='singular value '+str(0))
 
-    ax[0].legend(loc= 'best',fontsize=14)
-    ax[0].set_xlabel('t/T')
+    ax.legend(loc= 'best',fontsize=14)
+    ax.set_xlabel('t(ps)')
 
-    ax[1].legend(loc= 'best',fontsize = 14)
-    ax[1].set_xlabel('t/T')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
 
-    ax[0].set_yscale('log')
+    # x not log scale but y log scale.
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+    ax1.plot(np.array(Time_step) , Singular_value_list[0], marker = 'o', label='singular value '+str(0) )
+    ax1.legend(loc= 'best',fontsize=14)
+    ax1.set_xlabel('t(ps)')
 
-    ax[1].set_xscale('log')
-    ax[1].set_yscale('log')
+    ax1.set_yscale('log')
 
     plt.show()
 
@@ -258,7 +259,7 @@ def Analyze_Stability_Matrix_change_action():
     D = 32924
 
     # This term tune the chaos
-    V_phi = 251.2
+    V_phi = 7
 
     dof = 6
 
@@ -266,9 +267,9 @@ def Analyze_Stability_Matrix_change_action():
 
     frequency = [1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1]  # in unit of cm^{-1}
 
-    final_time = 0.01
+    final_time = 3
 
-    Time_step = np.linspace(0, final_time, 500)
+    Time_step = np.linspace(0, final_time, 100)
 
     Initial_action = [2, 2, 3, 3, 3, 2]
     Initial_angle1 = [np.random.random() * np.pi * 2 for i in range(dof)]
@@ -327,11 +328,11 @@ def Analyze_Stability_Matrix_change_action():
     Singular_value_list = np.transpose(Singular_value_list)
 
     fig, ax = plt.subplots(nrows=1,ncols=1)
-    for i in range(dof):
-        ax.plot(np.array(Time_step) / Period ,Singular_value_list[i], label='singular value '+str(i))
+    # for i in range(dof):
+    ax.plot(np.array(Time_step) ,Singular_value_list[0], label='singular value '+str(0))
 
     ax.legend(loc= 'best')
-    ax.set_xlabel('t/T')
+    ax.set_xlabel('t(ps)')
 
     # ax.set_xscale('log')
     ax.set_yscale('log')
@@ -348,7 +349,7 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     # This term tune the chaos
     # V_phi = 75.7
-    V_phi = 60
+    V_phi = 0
 
     dof = 6
 
@@ -356,9 +357,9 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
 
     frequency = np.array([1003.1, 1003.5, 1002.9, 1002.4, 1003.8, 1001.1])  # in unit of cm^{-1}
 
-    final_time = 0.05
+    final_time = 1
 
-    Time_step_len = 1000
+    Time_step_len = 100
 
     Time_step = np.linspace(0, final_time, Time_step_len)
 
@@ -379,7 +380,8 @@ def Analyze_Stability_Matrix_for_xp_SWW(folder_path):
     # coherent_state_p = coherent_state_alpha_amplitude_list * np.sin(coherent_state_alpha_angle_list)
     # std_for_xp = 1/2
 
-    Initial_action = [2 ,2, 3, 3 , 3, 2]
+    Initial_action = [2. ,2., 3., 3. , 3., 2.]
+
     Initial_action = [float(i) for i in Initial_action]
     Initial_energy = np.sum( np.array(frequency) * np.array(Initial_action) )
 

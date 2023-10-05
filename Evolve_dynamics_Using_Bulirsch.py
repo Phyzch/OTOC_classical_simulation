@@ -97,8 +97,8 @@ def Plot_Trajectory_Other_molecule_BS_method():
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
 
-    final_time = 0.5
-    Time_step_len = 1000
+    final_time = 0.3
+    Time_step_len = 500
     Time_step = np.linspace(0, final_time, Time_step_len)
 
     Initial_position = Initial_action + Initial_angle

@@ -32,7 +32,7 @@ def SCCL2_Analyze_Sensitivity_number_operator():
     frequency = [1149, 508, 291, 474, 843, 333]
 
     dof = 6
-
+    # mean frequency.
     f0 = 500
 
     nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
@@ -116,6 +116,150 @@ def SCCL2_Analyze_Sensitivity_number_operator():
 
     ax[1].set_xscale('log')
     ax[1].set_yscale('log')
+
+    plt.show()
+
+def Other_molecules_Analyze_Stability_Matrix_number_operator():
+    matplotlib.rcParams.update({'font.size': 14})
+
+    # This term tune the chaos
+    V0 = 3050
+
+    scaling_parameter = 0.2
+
+    # Cyclopentane
+    # frequency = [3062, 2914, 1445, 1349, 1275, 1203, 1043, 905, 695]
+    # dof = 9
+    # Initial_action = [2, 2, 2, 3, 2, 2, 2, 2,2]
+    # Initial_angle_for_largest_eigenvalue = np.zeros([dof]).tolist()
+
+    # Cyclopentanone
+    frequency = [2210, 2222, 2966, 2945, 2130, 2126, 2880, 2880]
+    dof = 8
+    Initial_action = [1, 1, 1, 0, 0, 1, 0, 0]
+    Initial_angle_for_largest_eigenvalue = np.zeros([dof]).tolist()
+
+    f0 = 500
+
+    nquanta_list = Generate_n_quanta_list_for_SCCL2(dof)
+    nquanta_list_trans = np.transpose(nquanta_list)
+
+    final_time = 0.3
+
+    Time_step_len = 1000
+
+    Time_step = np.linspace(0, final_time, Time_step_len)
+
+    Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
+    Initial_angle = [4.256969836325407, 1.6234678858647305, 4.882146967390925, 5.677058117773078, 4.228712073948068, 1.3018407409830988, 3.6387323646951053, 5.025994278936601]
+
+    print(Initial_angle)
+
+    Initial_position = Initial_action + Initial_angle
+
+    # sol = Evolve_dynamics_Other_Molecules(Initial_position,Time_step,V0,scaling_parameter,frequency,f0,nquanta_list ,nquanta_list_trans)
+    _, sol, finish_simulation = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0,
+                                                                         scaling_parameter,
+                                                                         frequency, f0, nquanta_list,
+                                                                         nquanta_list_trans)
+    angle_jitter_bool = False
+    if (angle_jitter_bool):
+        print("change angle")
+    else:
+        print("change action")
+
+    jitter = 0.001
+    Sol_diff_list = []
+    for i in range(dof):
+        if(angle_jitter_bool):
+            phase_change = np.zeros(dof)
+            phase_change[i] = jitter
+
+            Initial_angle2 = np.array(Initial_angle) + np.array(phase_change)
+            Initial_angle2 = Initial_angle2.tolist()
+            Initial_position = Initial_action + Initial_angle2
+
+        else:
+            action_change = np.zeros(dof)
+            action_change[i] = jitter
+
+            Initial_action2 = np.array(Initial_action) + np.array(action_change)
+            Initial_action2 = Initial_action2.tolist()
+            Initial_position = Initial_action2 + Initial_angle
+
+        _, sol1, finish_simulation = Evolve_dynamics_Other_Molecule_BS_method(Initial_position, Time_step, V0,
+                                                                         scaling_parameter,
+                                                                         frequency, f0, nquanta_list,
+                                                                         nquanta_list_trans)
+
+        Sol_diff = np.array(sol1) - np.array(sol)
+
+        Sol_diff_list.append(Sol_diff)
+
+        # form matrix for \partial n_{i} , \partial phi_{j}
+    Time_step_len = len(Time_step)
+
+    Stability_Matrix_list = []
+
+    for t in range(Time_step_len):
+        Stability_Matrix = []
+        for i in range(dof):
+            Stability_Matrix.append([])
+
+        for i in range(dof):
+            for j in range(dof):
+                Stability_Matrix[i].append(Sol_diff_list[j][t][i] / jitter)
+
+        Stability_Matrix_list.append(Stability_Matrix)
+
+    Singular_value_list = []
+    for t in range(Time_step_len):
+        u, s, vh = np.linalg.svd(Stability_Matrix_list[t])
+        s = -np.sort(-s)
+        Singular_value_list.append(s)
+
+    Singular_value_list = np.transpose(Singular_value_list)
+
+    fig, ax = plt.subplots(nrows=1,ncols=1)
+    # for i in range(dof):
+    ax.plot(np.array(Time_step) ,Singular_value_list[0], marker = 'o', label='singular value '+str(0))
+
+    ax.legend(loc= 'best',fontsize=14)
+    ax.set_xlabel('t(ps)')
+
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+
+
+    # analyze \partial \phi_{i}(t) / \phi_{j}
+    Stability_Matrix_list = []
+
+    for t in range(Time_step_len):
+        Stability_Matrix = []
+        for i in range(dof):
+            Stability_Matrix.append([])
+
+        for i in range(dof):
+            for j in range(dof):
+                Stability_Matrix[i].append(Sol_diff_list[j][t][i + dof] / jitter)
+
+        Stability_Matrix_list.append(Stability_Matrix)
+
+    Singular_value_list = []
+    for t in range(Time_step_len):
+        u, s, vh = np.linalg.svd(Stability_Matrix_list[t])
+        s = -np.sort(-s)
+        Singular_value_list.append(s)
+
+    Singular_value_list = np.transpose(Singular_value_list)
+
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1)
+    # for i in range(dof):
+    ax1.plot(np.array(Time_step), Singular_value_list[0], marker='o', label='singular value ' + str(0))
+
+    ax1.legend(loc='best', fontsize=14)
+    ax1.set_xlabel('t(ps)')
+    ax1.set_title('$\partial \phi_{i}(t)$/ $ \partial \phi_{j}$')
 
     plt.show()
 
@@ -688,12 +832,12 @@ def Analyze_OTOC_for_xp_for_Realistic_SCCL2_Hamiltonian(folder_path):
     # Initial_action =  [6.2187, 5.5134, 1.0357, 3.2284, 4.9875, 2.896]
 
     Initial_action = [6 ,5 ,1 ,3 , 5 ,3 ]
-    # Initial_action = [6.443361389024258 , 5.498726499017275 , 0.004483104899902918 , 3.4899575407048666 , 5.33742376176894 , 2.4610551812380934   ]
+    # Initial_action = [3,3,3,2,2,2]
 
-    # Initial_angle = [6.187856532830749 , 3.0831171845949323 , 5.3885555263307054 , 5.343595874871913 , 2.7022494924080744 , 2.2882731849628586]
-    Initial_angle = [0.76312942, 3.24811867, 5.31414533, 5.29596274, 3.11228988, 1.07851619]
+    # Initial_angle = [4.548404130084764 , 1.7663362276870278 , 1.830422038870239 , 0.21095046284191535 , 3.5333807375548707 , 1.404597191501034]
+    Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
     center_angle = Initial_angle
-    # Initial_angle = [2 * np.pi * np.random.random() for i in range(dof)]
+
 
     Iteration_number_per_core = int(Iterate_number / num_proc)
     Iterate_number = Iteration_number_per_core * num_proc
@@ -1257,9 +1401,6 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
 
     Initial_action = [6, 5, 1, 3, 5 ,3 ]
-    # Initial_action = [3.823426581379209 , 4.745657694205246 , 1.0286021087613886 , 3.164561777302945,  9.36722136266419 , 3.163802267088526]
-    # Initial_action = [2 , 1 , 2 , 1 ,2 ,3 ]
-    # Initial_action1 = [2, 2, 3, 3, 3 + action_jitter, 2]
 
     max_action_in_all_simulation = 0
     Index = -1 # Index for max action angle.
@@ -1270,7 +1411,11 @@ def Plot_Trajectory_SCCL2_Realistic_Hamiltonian():
 
 
     # Initial_angle = [np.random.random() * np.pi * 2 for i in range(dof)]
-    Initial_angle = [6.0252938,  3.91642767, 4.68152349, 3.77998479, 2.9231359 , 3.47953764]
+
+    # chaotic
+    # Initial_angle = [6.0252938,  3.91642767, 4.68152349, 3.77998479, 2.9231359 , 3.47953764]
+
+    # regular
     Initial_angle = [5.55370451, 0.02425863, 5.04619891, 0.35696992, 1.91216829, 1.78723057]
 
     Initial_angle_list.append(Initial_angle)
